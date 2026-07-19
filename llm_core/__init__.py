@@ -7,7 +7,7 @@ from .validation import (
     truncate_at_sentence,
 )
 from .logs import PipelineLogger, get_logger
-from .guarded import GuardedLLMClient
+from .guards import GuardedLLMClient
 from .policies import STEP_POLICIES, for_extraction
 
 __all__ = [
