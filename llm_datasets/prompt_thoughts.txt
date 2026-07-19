@@ -1,0 +1,19 @@
+TOP 1 = semantic_analytist
+TOP 2 = strict_extractor
+TOP 3 = default
+
+semantic_analytist:
+    summary действительно является summary
+    response не повторяет summary
+    key_thoughts идут от общего к частному
+    Меньше воды
+
+strict_extractor:
+    Практически не выдумывает
+    Все факты есть в тексте
+    Summary короткий
+
+default:
+    много повторов - это baaaad
+    длинный респонс
+    шаблонные ответы - робот

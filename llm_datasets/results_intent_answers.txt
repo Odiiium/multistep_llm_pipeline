@@ -1,0 +1,17 @@
+0: {
+  "summary": "Acknowledges the positive feedback and explains how to submit feature requests for customization options."
+}
+1: {"summary": "User is providing feedback about documentation quality for new users. This is not a technical issue requiring troubleshooting, but a product feedback request."}
+2: {"summary":"Application crashes during file upload. Likely causes: file format, size limit, or corrupted file. Troubleshooting steps below."}
+3: {"summary":"I understand you're having trouble logging in and need help resetting your password. Let me guide you through the process. First, could you confirm the email address associated with your account so I can provide the correct reset steps?"}
+4: { "summary": "Feature suggestion noted and forwarded to the product team." }
+5: {"summary": "Premium plan pricing inquiry answered."}
+6: { "summary": "I'd be happy to help resolve your declined payment. Let me start by gathering some key details to identify the cause." }
+7: { "summary": "Request for refund due to unmet expectations." }
+8: {"summary":"Machine learning is a subset of artificial intelligence where computers learn patterns from data without being explicitly programmed for every rule. Instead of following static instructions, algorithms improve their performance on a task as they are exposed to more examples. The core idea is to find mathematical relationships in data that can be used for prediction or decision-making. It works by feeding a model a large amount of data, allowing it to adjust its internal parameters through an optimization process (like gradient descent) to minimize errors, and then using the learned model to make predictions on new, unseen data."}
+9: { "summary": "The capital of France is Paris." }
+10: {"summary":"To schedule a demo of our enterprise solution, please provide your preferred date and time, along with your contact details, so I can assist you further. Alternatively, you can visit our demo scheduling page for immediate options."}
+11: {"summary":"I understand your frustration. Let me look into this right away. I'll need your account email or subscription ID to investigate the cancellation reason and restore your access if possible."}
+12: {"summary": "I need to check our current pricing and discount policies for annual subscriptions. Let me verify that for you."}
+13: {"summary":"RAM is short-term memory for active tasks, while storage is long-term memory for saving files and programs. RAM is fast but volatile; storage is slower but permanent."}
+14: { "summary": "I understand your frustration with the slow support you received. I'm here to help resolve your issue now. Could you please describe the problem you're facing so I can assist you as quickly as possible?" }

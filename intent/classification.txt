@@ -1,0 +1,77 @@
+[
+    {
+        "intent": "feedback",
+        "confidence": 4,
+        "reason": "User suggests feature improvements."
+    },
+    {
+        "intent": "feedback",
+        "confidence": 4,
+        "reason": "Suggesting improvements for documentation."
+    },
+    {
+        "intent": "support",
+        "confidence": 5,
+        "reason": "Reporting a bug issue."
+    },
+    {
+        "intent": "support",
+        "confidence": 5,
+        "reason": "User needs help with login issue."
+    },
+    {
+        "intent": "feedback",
+        "confidence": 4,
+        "reason": "User suggests a feature."
+    },
+    {
+        "intent": "sales",
+        "confidence": 5,
+        "reason": "User inquires about pricing."
+    },
+    {
+        "intent": "support",
+        "confidence": 5,
+        "reason": "User needs help with payment issue."
+    },
+    {
+        "intent": "complaint",
+        "confidence": 5,
+        "reason": "Dissatisfaction with product"
+    },
+    {
+        "intent": "general_question",
+        "confidence": 5,
+        "reason": "Factual question about ML."
+    },
+    {
+        "intent": "general_question",
+        "confidence": 5,
+        "reason": "Request for factual information."
+    },
+    {
+        "intent": "sales",
+        "confidence": 5,
+        "reason": "Requesting a demo for purchase."
+    },
+    {
+        "intent": "complaint",
+        "confidence": 5,
+        "reason": "User expresses disappointment."
+    },
+    {
+        "intent": "sales",
+        "confidence": 5,
+        "reason": "User is inquiring about discounts."
+    },
+    {
+        "intent": "general_question",
+        "confidence": 5,
+        "reason": "Factual question about tech terms."
+    },
+    {
+        "intent": "complaint",
+        "confidence": 5,
+        "reason": "Expressing dissatisfaction with support"
+    }
+]

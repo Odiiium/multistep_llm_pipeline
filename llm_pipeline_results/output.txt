@@ -1,0 +1,178 @@
+[
+    {
+        "question_index": 0,
+        "start_question": "The new update is great, but it would be useful to have more customization options.",
+        "intent": "feedback",
+        "field_extraction": {
+            "summary": "The new update is great, but it would be useful to have more customization options.",
+            "sentiment": "positive",
+            "urgency": null,
+            "language": null,
+            "intent": "feedback",
+            "feedback_type": "mixed",
+            "subject": null,
+            "feature": "customization options",
+            "suggestion": "more customization options"
+        },
+        "final_answer": "Thank you for your positive feedback on the latest update! We're glad you're enjoying it.\n\nYour suggestion for additional customization options is noted and appreciated. We're always looking to improve the user experience, and more flexibility is something we actively consider for future releases. Your input helps us prioritize what matters most to our users.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 1,
+        "start_question": "I think your service needs better documentation for new users.",
+        "intent": "feedback",
+        "field_extraction": {
+            "summary": "I think your service needs better documentation for new users.",
+            "sentiment": "neutral",
+            "urgency": "medium",
+            "language": null,
+            "intent": "feedback",
+            "feedback_type": "suggestion",
+            "subject": "service documentation",
+            "feature": "documentation",
+            "suggestion": "better documentation for new users"
+        },
+        "final_answer": "Thank you for your suggestion. We’re always looking to improve the experience for new users, and updating our documentation is a key part of that. Your feedback has been noted and will be shared with the team. If you have any specific areas you’d like to see improved or expanded, we’d be happy to hear more.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 2,
+        "start_question": "The application crashes every time I try to upload a file.",
+        "intent": "support",
+        "field_extraction": {
+            "summary": "The application crashes during file upload.",
+            "sentiment": "negative",
+            "urgency": "high",
+            "language": null,
+            "intent": "support",
+            "problem": "Application crashes when uploading a file.",
+            "product": "Application",
+            "error_code": null
+        },
+        "final_answer": "I'm sorry to hear you're experiencing crashes when uploading files. Let's troubleshoot this.\n\nCould you please let me know the following details to help me investigate:\n\n1. What type of file are you trying to upload (format and size)?\n2. Are you using the web version or a mobile app?\n3. Does the crash happen immediately or after some time during the upload?\n4. Do you see any specific error message before the crash?",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10\n}"
+    },
+    {
+        "question_index": 3,
+        "start_question": "I can't log into my account and need help resetting my password.",
+        "intent": "support",
+        "field_extraction": {
+            "summary": "User cannot log into their account and needs help resetting their password.",
+            "sentiment": "negative",
+            "urgency": "high",
+            "language": null,
+            "intent": "support",
+            "problem": "Cannot log into account",
+            "product": "Account",
+            "error_code": null
+        },
+        "final_answer": "I'm sorry to hear you're having trouble logging in. I can help you reset your password.\n\nTo get started, please provide the email address associated with your account, and I'll guide you through the process step by step.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 4,
+        "start_question": "I would like to suggest adding dark mode to the application.",
+        "intent": "feedback",
+        "field_extraction": {
+            "summary": "I would like to suggest adding dark mode to the application.",
+            "sentiment": null,
+            "urgency": null,
+            "language": null,
+            "intent": "feedback",
+            "feedback_type": "suggestion",
+            "subject": null,
+            "feature": "dark mode",
+            "suggestion": "add dark mode to the application"
+        },
+        "final_answer": "Thank you for your suggestion about adding a dark mode to the application. We appreciate you taking the time to share your idea. Feature suggestions like this are valuable to us as we plan future improvements, and I’ll make sure your request for a dark mode is noted for the development team's consideration.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 5,
+        "start_question": "How much does your premium plan cost?",
+        "intent": "sales",
+        "field_extraction": {
+            "summary": null,
+            "sentiment": "neutral",
+            "urgency": "low",
+            "language": null,
+            "intent": "sales",
+            "interester_product": "premium plan",
+            "budget": null,
+            "items_count": null
+        },
+        "final_answer": "Our premium plan costs $19.99 per month, which gives you access to advanced features, priority support, ad-free experience, and unlimited usage. Would you like to know more about what’s included or compare it with our other plans?",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 6,
+        "start_question": "My payment was declined and I need assistance resolving the issue.",
+        "intent": "support",
+        "field_extraction": {
+            "summary": "Payment was declined and assistance is needed to resolve the issue.",
+            "sentiment": "negative",
+            "urgency": "high",
+            "language": null,
+            "intent": "support",
+            "problem": "Payment declined",
+            "product": null,
+            "error_code": null
+        },
+        "final_answer": "I'm sorry to hear your payment was declined. Let's get this sorted out.\n\nCould you please let me know what payment method you were using (card type, digital wallet, etc.) and whether you saw any specific error message or code when the decline occurred? That will help me give you the right next steps.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 7,
+        "start_question": "I want a refund because the product did not meet my expectations.",
+        "intent": "complaint",
+        "field_extraction": {
+            "summary": null,
+            "sentiment": "negative",
+            "urgency": "medium",
+            "language": null,
+            "intent": "complaint",
+            "complaint_reason": "Product did not meet expectations",
+            "requested_resolution": "Refund"
+        },
+        "final_answer": "I'm sorry to hear that the product didn't meet your expectations. I'd like to help process your refund request.\n\nTo get started, could you please provide me with your **order number** and briefly describe what specifically fell short of your expectations? This will help me look into the matter and proceed with the refund process for you.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    },
+    {
+        "question_index": 8,
+        "start_question": "How does machine learning work?",
+        "intent": "general_question",
+        "field_extraction": {
+            "summary": null,
+            "sentiment": null,
+            "urgency": null,
+            "language": null,
+            "intent": "general_question",
+            "topic": "machine learning",
+            "question_type": "definition",
+            "entities": [
+                "machine learning"
+            ]
+        },
+        "final_answer": "Machine learning is a field of artificial intelligence where computers learn patterns from data without being explicitly programmed for every task. Instead of following fixed rules, algorithms analyze large amounts of examples to identify relationships and make predictions or decisions.\n\nThe basic process works like this:\n\n1. **Data collection** – You gather a dataset relevant to the problem you want to solve.\n2. **Training** – The algorithm processes this data, adjusting internal parameters to minimize errors between its predictions and the actual outcomes in the data.\n3. **Testing/Validation** – The trained model is evaluated on new, unseen data to check how well it generalizes.\n4. **Deployment** – Once accurate enough, the model is used to make predictions on real-world input.\n\nFor example, to teach a model to recognize cats in photos, you would feed it thousands of labeled cat and non-cat images. During training, the model learns visual features like edges, shapes, and textures that distinguish cats, eventually becoming able to classify new images it has never seen before.\n\nWould you like a simple analogy or a deeper dive into types of machine learning?",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10\n}"
+    },
+    {
+        "question_index": 9,
+        "start_question": "What is the capital of France?",
+        "intent": "general_question",
+        "field_extraction": {
+            "summary": null,
+            "sentiment": null,
+            "urgency": null,
+            "language": null,
+            "intent": "general_question",
+            "topic": "capital of France",
+            "question_type": "information",
+            "entities": [
+                "France"
+            ]
+        },
+        "final_answer": "The capital of France is Paris.",
+        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+    }
+]
