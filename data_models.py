@@ -35,6 +35,11 @@ class Criticality(enum.Enum):
     degradable  =   "degradable"
     optional    =   "optional"
 
+class FallbackMode(enum.Enum):
+    normal          =   "normal"
+    repair          =   "repair"
+    fallback_prompt =   "fallback_prompt"
+
 @dataclass
 class Message:
     role : str
@@ -121,6 +126,8 @@ class PipelineLMResult(BaseModel):
     field_extraction : Any
     final_answer : str
     judge_result : JudgedLMResult | None = None
+    degraded_steps : list[str] = []
+    fallback_levels : dict[str, int] = {}
 
 class CommonFields(BaseModel):
     summary : str | None = None
@@ -187,6 +194,13 @@ class LLMCallResult:
         return cls(ok=False, failure=failure, **kw)
 
 @dataclass
+class FallbackStep:
+    level: int
+    mode: FallbackMode = FallbackMode.normal
+    temperature: float | None = None
+    prompt: str | None = None
+
+@dataclass
 class StepPolicy:
     name: str
     model: type[BaseModel] | None = None
@@ -194,7 +208,7 @@ class StepPolicy:
     hard_max_chars: int | None = None
     min_chars: int = 1
     criticality: Criticality = Criticality.required
-    fallback_chain: list = dataclass_field(default_factory=list)
+    fallback_chain: list[FallbackStep] = dataclass_field(default_factory=list)
     retry_budget: int = 3
     temperature_ladder: list[float] = dataclass_field(default_factory=list)
 
@@ -203,6 +217,25 @@ class StepPolicy:
             return None
         idx = min(attempt - 1, len(self.temperature_ladder) - 1)
         return self.temperature_ladder[idx]
+
+    def budget(self) -> int:
+        return max(1, len(self.fallback_chain) or self.retry_budget)
+
+    def plan_for(self, attempt : int) -> FallbackStep:
+        if not self.fallback_chain:
+            return FallbackStep(level=0,
+                                mode=FallbackMode.normal,
+                                temperature=self.temperature_for(attempt))
+
+        step = self.fallback_chain[min(attempt - 1, len(self.fallback_chain) - 1)]
+
+        if step.temperature is None:
+            return FallbackStep(level=step.level,
+                                mode=step.mode,
+                                temperature=self.temperature_for(attempt),
+                                prompt=step.prompt)
+
+        return step
 
 INTENT_MODELS = {
     "support": SupportFields,

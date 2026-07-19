@@ -1,10 +1,17 @@
+import argparse
 import os
 from dotenv import load_dotenv
 from promts import *
 from llm_api import *
 from data_models import *
 import json
-from multistep_llm_pipeline import MultiStepLLMPipeline, LLMPipelineSettings, build_llm_pipeline
+from multistep_llm_pipeline import (
+    MultiStepLLMPipeline,
+    LLMPipelineSettings,
+    build_llm_pipeline,
+    add_llm_arguments,
+    settings_from_args,
+)
 
 env = load_dotenv()
 main_api_key = os.getenv("DEEP_INFRA_KEY")
@@ -18,16 +25,18 @@ temperature = .85
 top_p = .9
 max_tokens = 1024
 
-intent_input_path = "itgrind_transformers/intent/questions.txt"
-intent_classification_output = "itgrind_transformers/intent/classification.txt"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-messages_output_path = "itgrind_transformers/llm_datasets/"
+intent_input_path = os.path.join(BASE_DIR, "intent/questions.txt")
+intent_classification_output = os.path.join(BASE_DIR, "intent/classification.txt")
+
+messages_output_path = os.path.join(BASE_DIR, "llm_datasets/")
 output_file = "results"
 output_format = ".txt"
-messages_input_path = "itgrind_transformers/llm_datasets/inputs.txt"
+messages_input_path = os.path.join(BASE_DIR, "llm_datasets/inputs.txt")
 
-llm_pipeline_input = "itgrind_transformers/llm_pipeline_results/input.txt"
-llm_pipeline_output = "itgrind_transformers/llm_pipeline_results/output.txt"
+llm_pipeline_input = os.path.join(BASE_DIR, "llm_pipeline_results/input.txt")
+llm_pipeline_output = os.path.join(BASE_DIR, "llm_pipeline_results/output.txt")
 
 schemas = {LLMSummarizationAnswer : (PAYLOAD_SCHEMA, LLMSummarizationAnswer.validate_answer_json),
            LLMSummarizationAnswer_LLM_DAY3 : (PAYLOAD_SCHEMA_LLM_DAY_3, LLMSummarizationAnswer_LLM_DAY3.validate_answer_json)}
@@ -98,7 +107,31 @@ def process_messages_with_intent_classification(llmClient : LLMClient, classifie
         
     with open(messages_output_path + output_file + "_intent_answers" + output_format, 'w') as f:
         f.write("".join((f"{i}: " + result + '\n' for i, result in enumerate(results))))
-                
+        
+def parse_args():
+    parser = argparse.ArgumentParser(
+        prog="main",
+        description="Run the multi-step LLM pipeline over a file of input messages.")
+    add_llm_arguments(parser)
+    parser.add_argument("--lines", type=int, default=10,
+                        help="how many lines to read from the input file (-1 for all)")
+    parser.add_argument("--input", default=llm_pipeline_input, help="input file with one message per line")
+    parser.add_argument("--output", default=llm_pipeline_output, help="where to write the JSON results")
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+
+    pipeline_settings = settings_from_args(args)
+
+    multistepPipeline = build_llm_pipeline(pipeline_settings, input_path=args.input, output_path=args.output)
+    multistepPipeline.process_generation_pipeline(lines_to_process=args.lines)
+
+if __name__ == "__main__":
+    main()
+
+
+"""
 payload_type : type = LLMSummarizationAnswer_LLM_DAY3
 
 settings = LLMSettings(model_name=model_name,
@@ -117,16 +150,10 @@ classifier = IntentClassifierLM(classification_api_key,
 
 client = LLMClient(api_key=main_api_key, llm_settings=settings)
 
-pipeline_settings = LLMPipelineSettings(general_model_name=model_name,
-                                        general_model_url=deepinfa_url,
-                                        general_model_api_key=main_api_key,
-                                        simple_model_name=intent_model,
-                                        simple_model_api_key=classification_api_key,
-                                        simple_model_url=None) 
 
-multistepPipeline = build_llm_pipeline(pipeline_settings, input_path=llm_pipeline_input, output_path=llm_pipeline_output)
-multistepPipeline.process_generation_pipeline(lines_to_process=10)
 
-#process_messages_with_intent_classification(llmClient=client, classifier=classifier, settings=settings)
-#process_messages(messages_input, client, "llm_day_3")
-#iterate_registry_settings(client, settings=settings)
+
+process_messages_with_intent_classification(llmClient=client, classifier=classifier, settings=settings)
+process_messages(messages_input, client, "llm_day_3")
+iterate_registry_settings(client, settings=settings)
+"""

@@ -1,11 +1,30 @@
+import argparse
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from dotenv import load_dotenv
 from promts import *
 from llm_api import *
 from data_models import *
 import json
 from llm_core import GuardedLLMClient, STEP_POLICIES, for_extraction, get_logger
+from llm_core.fallback import classify_intent_offline, condense_message, empty_fields_for
+
+DETERMINISTIC_LEVEL = 3
+SKIPPED_LEVEL = 4
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_SESSION_DIR = os.path.join(BASE_DIR, "llm_sessions")
+
+DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
+DEFAULT_BASE_URL = "https://api.deepinfra.com/v1/openai"
+DEFAULT_SIMPLE_MODEL = "gpt-4o-mini"
+
+DEEPINFRA_BASE_URL = "https://api.deepinfra.com/v1/openai"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+class PipelineConfigurationError(RuntimeError):
+    pass
 
 class MultiStepLLMPipeline:
     def __init__(self, extract_client : ExtractMeaningLM,
@@ -15,7 +34,9 @@ class MultiStepLLMPipeline:
                  judge_client : SelfCheckLM,
                  input_path : str,
                  output_path : str,
-                 logger = None):
+                 logger = None,
+                 strict_extraction : bool = True):
+        self.strict_extraction = strict_extraction
         self.extractClient = extract_client
         self.classifierClient = classifier_client
         self.fieldExtractorClient = field_extractor_client
@@ -32,47 +53,43 @@ class MultiStepLLMPipeline:
             "judge":         GuardedLLMClient(judge_client, STEP_POLICIES["judge"], self.logger),
         }
 
-    def extract_sense(self, msg : UserMessage):
+    def extract_sense(self, msg : UserMessage) -> LLMCallResult:
         with self.logger.context(step="extract_sense"):
             result = self.guards["extract_sense"].call([msg])
 
-            if not result.ok:
-                return None
+            if result.ok:
+                self.logger.info("sense extracted (%d chars, attempts %d)", len(result.content), result.attempts)
 
-            self.logger.info(f"sense extracted success ({len(result.content)} symbols, retries {result.attempts})")
+            return result
 
-            return result.content
-
-    def generate_intent(self, msg : UserMessage):
+    def generate_intent(self, msg : UserMessage) -> LLMCallResult:
         with self.logger.context(step="intent"):
             result = self.guards["intent"].call([msg])
 
-            if not result.ok:
-                return None
+            if result.ok:
+                answer : IntentLMAnswer = result.parsed
+                self.logger.info("intent %s (confidence=%d, attempts %d)",
+                                 answer.intent.value, answer.confidence, result.attempts)
 
-            answer : IntentLMAnswer = result.parsed
-            self.logger.info(f"intent : {answer.intent.value} (confidence={answer.confidence}, retries: {result.attempts})")
+            return result
 
-            return answer.intent.value
-
-    def extract_fields(self, msg : UserMessage, intent):
+    def extract_fields(self, msg : UserMessage, intent) -> LLMCallResult:
         with self.logger.context(step="extract_fields"):
             model_type = INTENT_MODELS[intent]
 
             self.fieldExtractorClient.sys_message = SystemMessage(content=COMMON_EXTRACTION_PROMPT + "\n" + EXTRACTION_PROMPT_REGISTRY[intent])
-            self.fieldExtractorClient.set_response_schema_format(construct_api_payload(model_type.model_json_schema(), strict=True))
-            
+            self.fieldExtractorClient.set_response_schema_format(
+                construct_api_payload(model_type.model_json_schema(), strict=self.strict_extraction))
+
             guard = GuardedLLMClient(self.fieldExtractorClient, for_extraction(model_type), self.logger)
             result = guard.call([msg])
 
-            if not result.ok:
-                return None
+            if result.ok:
+                self.logger.info("fields extracted (%s, attempts %d)", model_type.__name__, result.attempts)
 
-            self.logger.info(f"fields extracted (type {model_type.__name__}, retries : {result.attempts})")
+            return result
 
-            return result.parsed
-
-    def generate_final_answer(self, msg : UserMessage, sense : str, intent : str, sentiment : str, field_extraction):
+    def generate_final_answer(self, msg : UserMessage, sense : str, intent : str, sentiment : str, field_extraction) -> LLMCallResult:
         with self.logger.context(step="final_answer"):
             self.responseGeneratorClient.sys_message = SystemMessage(content=get_final_asnwer_prompt())
 
@@ -83,111 +100,240 @@ class MultiStepLLMPipeline:
                                                                     field_extraction=field_extraction))
             result = self.guards["final_answer"].call([message])
 
-            if not result.ok:
-                return None
+            if result.ok:
+                self.logger.info("final answer ready (%d chars, attempts %d)", len(result.content), result.attempts)
 
-            self.logger.info(f"final answer ready ({len(result.content)} symbols, retries {result.attempts})")
+            return result
 
-            return result.content
-
-    def generate_judge_results(self, start_msg : str, final_answer : str):
+    def generate_judge_results(self, start_msg : str, final_answer : str) -> LLMCallResult:
         with self.logger.context(step="judge"):
             result = self.guards["judge"].call(
                 [UserMessage(content=get_judge_prompt(start_msg, final_answer))])
 
-            if not result.ok:
-                return None
+            if result.ok:
+                judged : JudgedLMResult = result.parsed
+                self.logger.info("judge passed=%s score=%d", judged.passed, judged.score)
 
-            judged : JudgedLMResult = result.parsed
-            self.logger.info(f"judge score: passed={judged.passed} score={judged.score})")
+            return result
 
-            return judged
+    def mark_degraded(self, name : str, result : LLMCallResult, degraded : list, levels : dict, level : int):
+        if result.failure is FailureKind.fatal:
+            raise PipelineConfigurationError(
+                f"step '{name}' hit a non-retryable error: {result.detail}. "
+                f"This is a configuration problem (key, model or endpoint), not a model failure. "
+                f"Check --api-key / --model / --base-url and their --simple-* counterparts.")
+
+        degraded.append(name)
+        levels[name] = level
+
+        failure = result.failure.value if result.failure else "unknown"
+        self.logger.warning("%s degraded to level %d (%s): %s", name, level, failure, result.detail)
 
 
     def generate_pipeline_step(self, msg : UserMessage, step : int = -1) -> PipelineLMResult | None:
-        sense = self.extract_sense(msg=msg)
+        degraded : list[str] = []
+        levels : dict[str, int] = {}
 
-        if sense is None:
-            self.logger.error("extract_sense step failed")
-            return None
+        sense_result = self.extract_sense(msg=msg)
 
-        intent = self.generate_intent(msg=msg)
+        if sense_result.ok:
+            sense = sense_result.content
+            levels["extract_sense"] = sense_result.fallback_level
+        else:
+            sense = condense_message(msg.content)
+            self.mark_degraded("extract_sense", sense_result, degraded, levels, DETERMINISTIC_LEVEL)
 
-        if intent is None:
-            self.logger.error("intent step failed")
-            return None
+        intent_result = self.generate_intent(msg=msg)
 
-        field_extraction = self.extract_fields(msg=msg, intent=intent)
+        if intent_result.ok:
+            intent = intent_result.parsed.intent.value
+            levels["intent"] = intent_result.fallback_level
+        else:
+            intent = classify_intent_offline(msg.content)
+            self.mark_degraded("intent", intent_result, degraded, levels, DETERMINISTIC_LEVEL)
+            self.logger.warning("intent resolved offline as %s", intent)
 
-        if field_extraction is None:
-            self.logger.error("extract_fields step failed")
-            return None
+        fields_result = self.extract_fields(msg=msg, intent=intent)
+
+        if fields_result.ok:
+            field_extraction = fields_result.parsed
+            levels["extract_fields"] = fields_result.fallback_level
+        else:
+            field_extraction = empty_fields_for(intent)
+            self.mark_degraded("extract_fields", fields_result, degraded, levels, DETERMINISTIC_LEVEL)
 
         sentiment = field_extraction.sentiment.value if field_extraction.sentiment is not None else "unknown"
-        final_answer = self.generate_final_answer(msg, sense, intent, sentiment, field_extraction)
+        answer_result = self.generate_final_answer(msg, sense, intent, sentiment, field_extraction)
 
-        if final_answer is None:
-            self.logger.error("final_answer step failed")
+        if not answer_result.ok:
+            if answer_result.failure is FailureKind.fatal:
+                raise PipelineConfigurationError(
+                    f"step 'final_answer' hit a non-retryable error: {answer_result.detail}. "
+                    f"Check --api-key / --model / --base-url.")
+
+            self.logger.error("final_answer is required and produced nothing, dropping line %d", step)
             return None
 
-        judge_result = self.generate_judge_results(msg.content, final_answer)
+        levels["final_answer"] = answer_result.fallback_level
 
-        if judge_result is None:
-            self.logger.error("judge step failed")
-            return None
+        judge_result = self.generate_judge_results(msg.content, answer_result.content)
+
+        if judge_result.ok:
+            judged = judge_result.parsed
+            levels["judge"] = judge_result.fallback_level
+        else:
+            judged = None
+            self.mark_degraded("judge", judge_result, degraded, levels, SKIPPED_LEVEL)
+
+        if degraded:
+            self.logger.warning("line %d completed with degraded steps: %s", step, degraded)
 
         return PipelineLMResult(question_index=step,
                                 start_question=msg.content,
                                 intent=intent,
                                 field_extraction = field_extraction,
-                                final_answer=final_answer,
-                                judge_result=judge_result)
+                                final_answer=answer_result.content,
+                                judge_result=judged,
+                                degraded_steps=degraded,
+                                fallback_levels=levels)
 
-    def process_generation_pipeline(self, lines_to_process = -1):
-        results : list[PipelineLMResult] = []
+    def run_interactive(self, session_dir : str = None):
+        session_dir = session_dir or DEFAULT_SESSION_DIR
+        os.makedirs(session_dir, exist_ok=True)
+
+        session_path = os.path.join(session_dir, f"session_{datetime.now():%Y%m%d_%H%M%S}.jsonl")
+        index = 0
+
+        print(f"Interactive pipeline. Session file: {session_path}")
+        print("Type a message and press Enter. Type 'exit' or press Ctrl+D to quit.\n")
+
+        while True:
+            try:
+                message = input("message> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not message:
+                continue
+
+            if message.lower() in ("exit", "quit"):
+                break
+
+            with self.logger.context(trace_id=self.logger.new_trace(), line_idx=index):
+                try:
+                    result = self.generate_pipeline_step(UserMessage(content=message), step=index)
+                except PipelineConfigurationError as exc:
+                    self.logger.error("%s", exc)
+                    break
+                except Exception as exc:
+                    self.logger.error("interactive step crashed with %s: %s", type(exc).__name__, exc)
+                    result = None
+
+            payload = result.model_dump(mode="json") if result else {"question_index": index,
+                                                                     "start_question": message,
+                                                                     "error": "pipeline failed"}
+
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+            print()
+            print(payload["final_answer"])
+            print()
+            
+            with open(session_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+            index += 1
+
+        print(f"Session saved to {session_path}")
+
+    @property
+    def partial_path(self) -> str:
+        return os.path.splitext(self.output_path)[0] + "_partial.jsonl"
+
+    def read_input_lines(self, lines_to_process : int) -> list[tuple[int, str]]:
         lines_gate = lines_to_process > 0
-        last_index  = 0
+        selected = []
 
-        self.logger.info(f"pipeline starts (run_id={self.logger.run_id}, log: {self.logger.calls_path})")
-
-        with open(self.input_path, 'r') as f:
+        with open(self.input_path, 'r', encoding="utf-8") as f:
             for i, line in enumerate(f):
-
                 if lines_gate and (i >= lines_to_process):
                     break
 
                 line = line.strip()
 
-                if not line:
-                    continue
+                if line:
+                    selected.append((i, line))
 
-                with self.logger.context(trace_id=self.logger.new_trace(), line_idx=i):
-                    self.logger.info("line %d: %s", i, line[:70])
-                    answer = self.generate_pipeline_step(UserMessage(content=line), step=i)
+        return selected
 
-                last_index = i
+    def append_partial(self, handle, result : PipelineLMResult):
+        handle.write(json.dumps(result.model_dump(mode="json"), ensure_ascii=False) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
 
-                if answer is not None:
+    def write_output(self, results : list[PipelineLMResult]):
+        with open(self.output_path, 'w', encoding="utf-8") as f:
+            json.dump([result.model_dump(mode="json") for result in results], f, indent=4, ensure_ascii=False)
+
+    def process_generation_pipeline(self, lines_to_process = -1):
+        results : list[PipelineLMResult] = []
+        failed_lines : list[int] = []
+
+        lines = self.read_input_lines(lines_to_process)
+
+        self.logger.info("pipeline starts (run_id=%s, lines=%d, log=%s, partial=%s)",
+                         self.logger.run_id, len(lines), self.logger.calls_path, self.partial_path)
+
+        with open(self.partial_path, 'w', encoding="utf-8") as partial:
+            for index, line in lines:
+                with self.logger.context(trace_id=self.logger.new_trace(), line_idx=index):
+                    self.logger.info("line %d: %s", index, line[:70])
+
+                    try:
+                        answer = self.generate_pipeline_step(UserMessage(content=line), step=index)
+                    except PipelineConfigurationError as exc:
+                        self.logger.error("aborting run: %s", exc)
+                        raise
+                    except Exception as exc:
+                        self.logger.error("line %d crashed with %s: %s", index, type(exc).__name__, exc)
+                        failed_lines.append(index)
+                        continue
+
+                    if answer is None:
+                        failed_lines.append(index)
+                        continue
+
                     results.append(answer)
+                    self.append_partial(partial, answer)
 
-        processed_indexes = {result.question_index for result in results}
-        problematic_points = [i for i in range(last_index + 1) if i not in processed_indexes]
-
-        if len(results) == 0:
-            self.logger.error("pipeline ended without any results")
+        if results:
+            self.write_output(results)
+            self.logger.info("finished: %d/%d lines -> %s", len(results), len(lines), self.output_path)
         else:
-            with open(self.output_path, 'w') as f:
-                json.dump([result.model_dump(mode="json") for result in results], f, indent=4, ensure_ascii=False)
+            self.logger.error("pipeline ended without any results")
 
-            self.logger.info("finished: %d/%d lines -> %s", len(results), last_index + 1, self.output_path)
+        if failed_lines:
+            self.logger.warning("failed lines: %s", failed_lines)
 
-        if problematic_points:
-            self.logger.warning("non processed lines : %s", problematic_points)
+        degraded_lines = [r.question_index for r in results if r.degraded_steps]
+
+        if degraded_lines:
+            self.logger.warning("degraded lines: %s", degraded_lines)
 
         summary = self.logger.summary()
-        self.logger.info("calls: %d, success: %d (%.0f%%), summary: %s",
+        summary.update({
+            "lines_total": len(lines),
+            "lines_completed": len(results),
+            "lines_failed": failed_lines,
+            "lines_degraded": degraded_lines,
+            "partial_log": self.partial_path,
+        })
+
+        self.logger.info("calls: %d, success: %d (%.0f%%), outcomes: %s",
                          summary["total_calls"], summary["ok_calls"],
                          summary["ok_rate"] * 100, summary["by_outcome"])
+        self.logger.info("lines: %d/%d completed, %d degraded, %d failed",
+                         len(results), len(lines), len(degraded_lines), len(failed_lines))
 
         return summary
 
@@ -212,9 +358,11 @@ def build_llm_pipeline(settings : LLMPipelineSettings, input_path : str, output_
     intent_client = IntentClassifierLM(api_key=settings.simple_model_api_key,
                                        model_name=settings.simple_model_name,
                                        sys_message=SystemMessage(content=INTENT_PROMPT),
-                                       payload_schema=INTENT_PAYLOAD_SCHEMA)
-    
+                                       payload_schema=INTENT_PAYLOAD_SCHEMA,
+                                       base_url=settings.simple_model_url)
+
     field_extractor_settings = LLMSettings(model_name=settings.simple_model_name,
+                                           base_url=settings.simple_model_url,
                                            temperature=.01)
     
     field_extractor_client = FieldExtractorLM(api_key=settings.simple_model_api_key,
@@ -241,4 +389,70 @@ def build_llm_pipeline(settings : LLMPipelineSettings, input_path : str, output_
                                 response_generator_client=response_generator_client,
                                 judge_client=judge_client,
                                 input_path=input_path,
-                                output_path=output_path)
+                                output_path=output_path,
+                                strict_extraction=settings.simple_model_url is None)
+
+def add_llm_arguments(parser : argparse.ArgumentParser):
+    load_dotenv()
+
+    parser.add_argument("--api-key", default=None,
+                        help="API key for the main model (falls back to env DEEP_INFRA_KEY)")
+    parser.add_argument("--model", default=DEFAULT_MODEL,
+                        help=f"main model name (default {DEFAULT_MODEL})")
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL,
+                        help=f"main model endpoint (default {DEFAULT_BASE_URL})")
+
+    parser.add_argument("--simple-api-key", default=None,
+                        help="API key for intent and field extraction (falls back to env OPEN_AI_KEY "
+                             "only when --api-key is not given). When both heads share a key, they also "
+                             "share the model and the endpoint unless overridden")
+    parser.add_argument("--simple-model", default=None,
+                        help=f"model for intent and field extraction (default {DEFAULT_SIMPLE_MODEL})")
+    parser.add_argument("--simple-base-url", default=None,
+                        help="endpoint for intent and field extraction (default: OpenAI)")
+
+    return parser
+
+def settings_from_args(args) -> LLMPipelineSettings:
+    api_key = args.api_key or os.getenv("DEEP_INFRA_KEY")
+
+    if not api_key:
+        raise SystemExit("No API key. Pass --api-key or set DEEP_INFRA_KEY in .env")
+
+    if args.simple_api_key:
+        simple_key = args.simple_api_key
+    elif args.api_key:
+        simple_key = api_key
+    else:
+        simple_key = os.getenv("OPEN_AI_KEY") or api_key
+
+    if simple_key == api_key:
+        simple_model = args.simple_model or args.model
+        simple_url = args.simple_base_url or args.base_url
+    else:
+        simple_model = args.simple_model or DEFAULT_SIMPLE_MODEL
+        simple_url = args.simple_base_url
+
+    return LLMPipelineSettings(general_model_name=args.model,
+                               general_model_url=args.base_url,
+                               general_model_api_key=api_key,
+                               simple_model_name=simple_model,
+                               simple_model_api_key=simple_key,
+                               simple_model_url=simple_url)
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="multistep_llm_pipeline",
+        description="Run the multi-step LLM pipeline interactively: type a message, get a JSON result.")
+    add_llm_arguments(parser)
+    parser.add_argument("--session-dir", default=DEFAULT_SESSION_DIR,
+                        help="directory for per-session result files")
+    args = parser.parse_args()
+
+    pipeline = build_llm_pipeline(settings_from_args(args),
+                                  input_path=None,
+                                  output_path=os.path.join(DEFAULT_SESSION_DIR, "interactive.json"))
+    pipeline.run_interactive(session_dir=args.session_dir)
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,26 @@
 from data_models import (
     Criticality,
+    FallbackMode,
+    FallbackStep,
     IntentLMAnswer,
     JudgedLMResult,
     StepPolicy,
 )
+from promts import (
+    FALLBACK_EXTRACTION_PROMPT,
+    FALLBACK_FINAL_ANSWER_PROMPT,
+    FALLBACK_INTENT_PROMPT,
+    FALLBACK_SELF_CHECK_PROMPT,
+    FALLBACK_SENSE_EXTRACTION_PROMPT,
+)
+
+def ladder(first : float, second : float, third : float, fallback_prompt : str) -> list[FallbackStep]:
+    return [
+        FallbackStep(level=0, mode=FallbackMode.normal, temperature=first),
+        FallbackStep(level=1, mode=FallbackMode.repair, temperature=second),
+        FallbackStep(level=2, mode=FallbackMode.fallback_prompt, temperature=third, prompt=fallback_prompt),
+    ]
+
 STEP_POLICIES = {
 
     "extract_sense": StepPolicy(
@@ -15,6 +32,7 @@ STEP_POLICIES = {
         criticality=Criticality.optional,
         retry_budget=3,
         temperature_ladder=[0.95, 0.3, 0.0],
+        fallback_chain=ladder(0.95, 0.3, 0.0, FALLBACK_SENSE_EXTRACTION_PROMPT),
     ),
 
     "intent": StepPolicy(
@@ -26,6 +44,7 @@ STEP_POLICIES = {
         criticality=Criticality.degradable,
         retry_budget=3,
         temperature_ladder=[0.01, 0.0, 0.0],
+        fallback_chain=ladder(0.01, 0.0, 0.0, FALLBACK_INTENT_PROMPT),
     ),
 
     "extract_fields": StepPolicy(
@@ -37,6 +56,7 @@ STEP_POLICIES = {
         criticality=Criticality.degradable,
         retry_budget=3,
         temperature_ladder=[0.01, 0.0, 0.0],
+        fallback_chain=ladder(0.01, 0.0, 0.0, FALLBACK_EXTRACTION_PROMPT),
     ),
 
     "final_answer": StepPolicy(
@@ -48,6 +68,7 @@ STEP_POLICIES = {
         criticality=Criticality.required,
         retry_budget=3,
         temperature_ladder=[0.95, 0.4, 0.1],
+        fallback_chain=ladder(0.95, 0.4, 0.1, FALLBACK_FINAL_ANSWER_PROMPT),
     ),
 
     "judge": StepPolicy(
@@ -59,6 +80,7 @@ STEP_POLICIES = {
         criticality=Criticality.optional,
         retry_budget=3,
         temperature_ladder=[0.01, 0.0, 0.0],
+        fallback_chain=ladder(0.01, 0.0, 0.0, FALLBACK_SELF_CHECK_PROMPT),
     ),
 }
 
@@ -74,4 +96,5 @@ def for_extraction(model_type) -> StepPolicy:
         criticality=base.criticality,
         retry_budget=base.retry_budget,
         temperature_ladder=list(base.temperature_ladder),
+        fallback_chain=list(base.fallback_chain),
     )

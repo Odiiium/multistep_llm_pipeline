@@ -625,6 +625,105 @@ def get_final_asnwer_prompt():
     
     return FINAL_ANSWER_DATA_PROMPT + FINAL_ANSWER_SYSTEM_PROMPT
 
+FALLBACK_SENSE_EXTRACTION_PROMPT = """
+Restate the user's message as plain text.
+
+Rules:
+- One or two sentences.
+- No greetings, no solutions, no assumptions.
+- Keep names, numbers, error codes and product names exactly as written.
+- Output the restatement only, nothing else.
+
+Example input:
+"Hi, my card was declined yesterday when paying for the subscription."
+
+Example output:
+User's card was declined while paying for a subscription.
+"""
+
+FALLBACK_INTENT_PROMPT = """
+Classify the user's message into exactly one category.
+
+Categories:
+support, feedback, complaint, sales, general_question
+
+Return one JSON object and nothing else:
+{"intent": "<category>", "confidence": <1-5>, "reason": "<short explanation>"}
+
+Example input:
+"The app crashes when I upload a file."
+
+Example output:
+{"intent": "support", "confidence": 5, "reason": "User reports an application crash."}
+
+Rules:
+- Pick exactly one category from the list.
+- If unsure, use general_question with confidence 1.
+- No markdown, no code fences, no extra text.
+"""
+
+FALLBACK_EXTRACTION_PROMPT = """
+Extract structured fields from the user's message.
+
+Rules:
+- Follow the provided JSON schema exactly.
+- Use null for anything the message does not state.
+- Never answer the user, never explain, never guess.
+- Output one JSON object only. No markdown, no code fences.
+"""
+
+FALLBACK_FINAL_ANSWER_PROMPT = """
+Write a short reply to the user.
+
+Rules:
+- Two to four sentences.
+- Address what the user asked, nothing else.
+- If key information is missing, ask one clarifying question.
+- Never mention internal analysis, intent or extracted fields.
+- Plain text only. Always finish your last sentence.
+"""
+
+FALLBACK_SELF_CHECK_PROMPT = """
+Judge whether the assistant answer is consistent with the user message.
+
+Return one JSON object and nothing else:
+{"passed": true, "score": 8, "issues": []}
+
+Rules:
+- passed is true only when the answer contradicts nothing and invents nothing.
+- score is an integer from 1 to 10.
+- issues is a list of short strings, empty when there are none.
+- No markdown, no code fences, no extra text.
+"""
+
+REPAIR_HINTS = {
+    "empty": "Your previous answer was empty. Produce a complete answer this time.",
+    "invalid_json": "Your previous answer was not valid JSON. Return one JSON object only, with no markdown, no code fences and no surrounding text.",
+    "schema": "Your previous answer did not match the required schema. Fix the listed problem and return the corrected JSON object.",
+    "truncated": "Your previous answer was cut off before it finished. Write a shorter answer that fits completely and ends with a finished sentence.",
+    "too_long": "Your previous answer exceeded the allowed length. Write a shorter answer that keeps the essential content and ends with a finished sentence.",
+}
+
+def build_repair_message(failure : str, detail : str | None, previous_answer : str | None, limit : int = 1200):
+    hint = REPAIR_HINTS.get(failure, "Your previous answer was rejected. Produce a corrected answer.")
+    previous = (previous_answer or "").strip()
+
+    if len(previous) > limit:
+        previous = previous[:limit] + " ...[cut]"
+
+    sections = [f"Your previous answer was rejected.\n\nProblem: {failure}"]
+
+    if detail:
+        sections.append(f"Details: {detail}")
+
+    if previous:
+        sections.append(f"Previous answer:\n{previous}")
+
+    sections.append(hint)
+    sections.append("Return the corrected answer only.")
+
+    return "\n\n".join(sections)
+
 def get_judge_prompt(start_msg : str, final_answer : str):
     return f"""
         User message:

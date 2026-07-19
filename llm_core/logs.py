@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timezone
 
-DEFAULT_LOG_DIR = "itgrind_transformers/llm_logs"
+DEFAULT_LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "llm_logs")
 
 _console = logging.getLogger("llm_pipeline")
 
