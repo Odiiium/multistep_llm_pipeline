@@ -8,7 +8,8 @@ from .validation import (
 )
 from .logs import PipelineLogger, get_logger
 from .guards import GuardedLLMClient
-from .policies import STEP_POLICIES, for_extraction
+from .policies import STEP_POLICIES, for_extraction, ladder
+from .fallback import classify_intent_offline, condense_message, empty_fields_for
 
 __all__ = [
     "ErrorClass", "classify_exception", "describe_exception",
@@ -16,5 +17,6 @@ __all__ = [
     "sanitize_json_text", "validate_response", "to_strict_schema", "truncate_at_sentence",
     "PipelineLogger", "get_logger",
     "GuardedLLMClient",
-    "STEP_POLICIES", "for_extraction",
+    "STEP_POLICIES", "for_extraction", "ladder",
+    "classify_intent_offline", "condense_message", "empty_fields_for",
 ]

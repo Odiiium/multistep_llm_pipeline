@@ -14,8 +14,20 @@
             "feature": "customization options",
             "suggestion": "more customization options"
         },
-        "final_answer": "Thank you for your positive feedback on the latest update! We're glad you're enjoying it.\n\nYour suggestion for additional customization options is noted and appreciated. We're always looking to improve the user experience, and more flexibility is something we actively consider for future releases. Your input helps us prioritize what matters most to our users.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "Thank you for your positive feedback on the update, and for your thoughtful suggestion about adding more customization options. We always appreciate hearing how we can improve the experience, and we'll be sure to share your input with our product team for consideration in future releases.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 1,
@@ -23,7 +35,7 @@
         "intent": "feedback",
         "field_extraction": {
             "summary": "I think your service needs better documentation for new users.",
-            "sentiment": "neutral",
+            "sentiment": "negative",
             "urgency": "medium",
             "language": null,
             "intent": "feedback",
@@ -32,8 +44,20 @@
             "feature": "documentation",
             "suggestion": "better documentation for new users"
         },
-        "final_answer": "Thank you for your suggestion. We’re always looking to improve the experience for new users, and updating our documentation is a key part of that. Your feedback has been noted and will be shared with the team. If you have any specific areas you’d like to see improved or expanded, we’d be happy to hear more.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "Thank you for your suggestion about improving the documentation for new users. We appreciate this feedback and will share it with our team to help make the onboarding experience clearer and more helpful for everyone.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 2,
@@ -49,8 +73,20 @@
             "product": "Application",
             "error_code": null
         },
-        "final_answer": "I'm sorry to hear you're experiencing crashes when uploading files. Let's troubleshoot this.\n\nCould you please let me know the following details to help me investigate:\n\n1. What type of file are you trying to upload (format and size)?\n2. Are you using the web version or a mobile app?\n3. Does the crash happen immediately or after some time during the upload?\n4. Do you see any specific error message before the crash?",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10\n}"
+        "final_answer": "I'm sorry you're experiencing this issue. Let's troubleshoot it step by step. First, could you tell me what type and size of file you're trying to upload, and whether you see any specific error message before the crash? Also, does this happen with all files or just certain ones?",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 3,
@@ -66,8 +102,20 @@
             "product": "Account",
             "error_code": null
         },
-        "final_answer": "I'm sorry to hear you're having trouble logging in. I can help you reset your password.\n\nTo get started, please provide the email address associated with your account, and I'll guide you through the process step by step.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "I'm sorry you're having trouble logging in. To help reset your password, please provide the email address or username associated with your account so I can send you a password reset link.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 4,
@@ -84,15 +132,27 @@
             "feature": "dark mode",
             "suggestion": "add dark mode to the application"
         },
-        "final_answer": "Thank you for your suggestion about adding a dark mode to the application. We appreciate you taking the time to share your idea. Feature suggestions like this are valuable to us as we plan future improvements, and I’ll make sure your request for a dark mode is noted for the development team's consideration.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "Thank you for your suggestion to add dark mode to the application. We always appreciate hearing ideas from our users, and this is a great one. I'll make sure your feedback is shared with our team for consideration in future updates.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 5,
         "start_question": "How much does your premium plan cost?",
         "intent": "sales",
         "field_extraction": {
-            "summary": null,
+            "summary": "Inquiry about the cost of the premium plan.",
             "sentiment": "neutral",
             "urgency": "low",
             "language": null,
@@ -101,8 +161,20 @@
             "budget": null,
             "items_count": null
         },
-        "final_answer": "Our premium plan costs $19.99 per month, which gives you access to advanced features, priority support, ad-free experience, and unlimited usage. Would you like to know more about what’s included or compare it with our other plans?",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "Our Premium plan is priced at $29.99 per month, which includes unlimited access to all features, priority support, and advanced analytics. Would you like me to go over the specific benefits included in this plan?",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 6,
@@ -118,8 +190,20 @@
             "product": null,
             "error_code": null
         },
-        "final_answer": "I'm sorry to hear your payment was declined. Let's get this sorted out.\n\nCould you please let me know what payment method you were using (card type, digital wallet, etc.) and whether you saw any specific error message or code when the decline occurred? That will help me give you the right next steps.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "I'm sorry to hear your payment was declined. To help resolve this, could you please let me know which payment method you were using and whether you received a specific error code or message when the decline occurred? In the meantime, I recommend checking that your card details are correct, your card hasn't expired, and that your bank hasn't flagged the transaction as suspicious.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 7,
@@ -131,11 +215,23 @@
             "urgency": "medium",
             "language": null,
             "intent": "complaint",
-            "complaint_reason": "Product did not meet expectations",
-            "requested_resolution": "Refund"
+            "complaint_reason": "product did not meet expectations",
+            "requested_resolution": "refund"
         },
-        "final_answer": "I'm sorry to hear that the product didn't meet your expectations. I'd like to help process your refund request.\n\nTo get started, could you please provide me with your **order number** and briefly describe what specifically fell short of your expectations? This will help me look into the matter and proceed with the refund process for you.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "final_answer": "I'm sorry to hear that the product didn't meet your expectations. I'd be happy to help you with a refund request. Please provide your order number and the product name so I can look into this and process it for you.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 8,
@@ -149,19 +245,29 @@
             "intent": "general_question",
             "topic": "machine learning",
             "question_type": "definition",
-            "entities": [
-                "machine learning"
-            ]
+            "entities": []
         },
-        "final_answer": "Machine learning is a field of artificial intelligence where computers learn patterns from data without being explicitly programmed for every task. Instead of following fixed rules, algorithms analyze large amounts of examples to identify relationships and make predictions or decisions.\n\nThe basic process works like this:\n\n1. **Data collection** – You gather a dataset relevant to the problem you want to solve.\n2. **Training** – The algorithm processes this data, adjusting internal parameters to minimize errors between its predictions and the actual outcomes in the data.\n3. **Testing/Validation** – The trained model is evaluated on new, unseen data to check how well it generalizes.\n4. **Deployment** – Once accurate enough, the model is used to make predictions on real-world input.\n\nFor example, to teach a model to recognize cats in photos, you would feed it thousands of labeled cat and non-cat images. During training, the model learns visual features like edges, shapes, and textures that distinguish cats, eventually becoming able to classify new images it has never seen before.\n\nWould you like a simple analogy or a deeper dive into types of machine learning?",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10\n}"
+        "final_answer": "Machine learning is a method of teaching computers to learn from data without being explicitly programmed for every task. Instead of following static instructions, algorithms identify patterns in large sets of examples—like recognizing faces in photos or predicting house prices—and improve their performance over time as they process more information. Essentially, the system builds its own rules by finding correlations in the data you give it.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     },
     {
         "question_index": 9,
         "start_question": "What is the capital of France?",
         "intent": "general_question",
         "field_extraction": {
-            "summary": null,
+            "summary": "What is the capital of France?",
             "sentiment": null,
             "urgency": null,
             "language": null,
@@ -173,6 +279,18 @@
             ]
         },
         "final_answer": "The capital of France is Paris.",
-        "judge_result": "{\n  \"passed\": true,\n  \"score\": 10,\n  \"issues\": []\n}"
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
     }
 ]
