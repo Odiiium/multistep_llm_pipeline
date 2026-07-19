@@ -22,9 +22,7 @@ INTENT_PAYLOAD_SCHEMA = {
                         "maximum" : 5,
                     },
                 "reason" : {
-                    "type" : "string",
-                    "minLength" : 10,
-                    "maxLength" : 80
+                    "type" : "string"
                 }
             },
             "required": [
@@ -67,8 +65,6 @@ PAYLOAD_SCHEMA = {
                     "properties": {
                         "summary": {
                             "type": "string",
-                            "minLength" : 25,
-                            "maxLength" : 50,
                         },
                         "key_thoughts": {
                             "type": "array",
@@ -102,8 +98,6 @@ PAYLOAD_SCHEMA_LLM_DAY_3 = {
                     "properties": {
                         "summary": {
                             "type": "string",
-                            "minLength" : 25,
-                            "maxLength" : 100,
                         },
                         "category" : {
                             "type" : "string",
@@ -128,8 +122,6 @@ PAYLOAD_SCHEMA_LLM_DAY_3 = {
                         },
                         "final_answer": {
                             "type": "string",
-                            "minLength" : 1,
-                            "maxLength" : 75,
                         },
                     },
                     "required": [
@@ -170,7 +162,9 @@ PROMPT_REGISTRY = {
         - Return only the requested JSON object.
         - Never invent or assume information.
         - Do not infer intentions unless they are clearly stated.
-        - The summary should describe the main point of the text in 25-50 characters.
+        - The summary should describe the main point of the text in one short
+          sentence (roughly 60-150 characters). Always finish the sentence -
+          never cut it short to fit the budget.
         - key_thoughts must contain exactly 3 concise factual statements.
         - The response should briefly answer or acknowledge the user's message.
         - Do not use markdown or explanations.
@@ -185,7 +179,8 @@ PROMPT_REGISTRY = {
         Requirements:
         - Return only the requested JSON object.
         - Focus on the meaning rather than copying phrases.
-        - Keep the summary concise (25-50 characters).
+        - Keep the summary concise: one sentence, roughly 60-150 characters.
+          Always finish the sentence rather than cutting it to fit.
         - key_thoughts must contain exactly 3 independent insights ordered by importance.
         - The response should be short, natural, and directly useful to the user.
         - Avoid repetition between summary, key_thoughts, and response.
@@ -326,6 +321,8 @@ Rules:
     4 = high confidence
     5 = very high confidence
 - Provide a short reason, explaining the classification.
+  Budget: one clause, roughly 30-80 characters. Finish the thought -
+  never cut the sentence short just to fit the budget.
 - Do not invent information.
 - Do not answer the user's request.
 - Return only valid JSON.
@@ -350,7 +347,9 @@ Rules:
 - Do not add assumptions or information that is not present.
 - Remove greetings, emotions, filler words, and unnecessary details.
 - Preserve important technical terms, names, numbers, dates, and conditions.
-- Keep the extracted meaning concise (1-3 sentences).
+- Keep the extracted meaning concise: 1-3 sentences, roughly up to 500 characters.
+- Always finish the final sentence. Never stop mid-sentence to satisfy the budget;
+  if you are running long, write fewer points instead of cutting one short.
 
 Examples:
 
@@ -615,7 +614,9 @@ def get_final_asnwer_prompt():
         2. Use extracted fields when they are relevant.
         3. Do not mention internal classification, intent, fields, or analysis.
         4. Do not say "I detected that your intent is..."
-        5. Be concise but helpful.
+        5. Be concise but helpful: aim for 2-5 sentences, roughly up to 900
+           characters. Always finish your final sentence - if you are running
+           long, cover fewer points rather than stopping mid-thought.
         6. If information is missing, ask a relevant clarification question.
         7. Maintain a professional and friendly tone.
 

@@ -2,10 +2,23 @@ from transformers import AutoTokenizer
 import torch as torch
 from openai import OpenAI,Timeout
 from dataclasses import dataclass, field
-from data_models import SystemMessage, Message, UserMessage
+from data_models import SystemMessage, Message, UserMessage, RawResponse
 
-DEFAULT_TIMEOUT = Timeout(connect=5.0, read=600, write=600, pool=600)
-MAX_RETRIES = 2
+DEFAULT_TIMEOUT = Timeout(connect=5.0, read=60, write=60, pool=60)
+MAX_RETRIES = 0
+
+def to_raw_response(completion) -> RawResponse:
+    choice = completion.choices[0] if completion.choices else None
+    message = getattr(choice, "message", None) if choice else None
+    usage = getattr(completion, "usage", None)
+
+    return RawResponse(
+        content=getattr(message, "content", None),
+        finish_reason=getattr(choice, "finish_reason", None) if choice else None,
+        usage=usage.model_dump() if hasattr(usage, "model_dump") else usage,
+        refusal=getattr(message, "refusal", None),
+    )
+
 
 @dataclass
 class LLMSettings:
@@ -53,20 +66,26 @@ class LLMClient:
     def set_response_schema_format(self, response_schema : str):
         self.payload["response_format"] = response_schema
     
-    def generate(self, message_list : list[Message]):
-        payload = self.payload
-    
+    def build_messages(self, message_list : list[Message]):
         messages = [msg.convert() for msg in message_list]
-        
+
         if (self.sys_message is not None):
             messages.insert(0, self.sys_message.convert())
-        
-        payload["messages"] = messages  # reuse messages each time u request generation (no structures/value types in python is sick)
 
-        result = self.client.chat.completions.create(**payload).choices[0].message.content
-        
-        return result
-    
+        return messages
+
+    def generate_raw(self, message_list : list[Message], temperature : float | None = None) -> RawResponse:
+        payload = dict(self.payload)
+        payload["messages"] = self.build_messages(message_list)
+
+        if temperature is not None:
+            payload["temperature"] = temperature
+
+        return to_raw_response(self.client.chat.completions.create(**payload))
+
+    def generate(self, message_list : list[Message]):
+        return self.generate_raw(message_list).content
+
 class IntentClassifierLM:
     def __init__(self, api_key : str, model_name : str, sys_message : SystemMessage, payload_schema : dict, temperature = 0.01):
         self.api_key = api_key
@@ -74,7 +93,9 @@ class IntentClassifierLM:
         self.sys_message = sys_message
         self.payload_schema = payload_schema
         self.temperature = temperature
-        self.client = OpenAI(api_key=api_key)
+        self.client = OpenAI(api_key=api_key,
+                             timeout=DEFAULT_TIMEOUT,
+                             max_retries=MAX_RETRIES)
         self.construct_payload()
         print(f"Init llm intent classifier with model {self.model_name}")
         
@@ -85,18 +106,18 @@ class IntentClassifierLM:
             "temperature": self.temperature,
         }
     
+    def generate_raw(self, message_list : list[Message], temperature : float | None = None) -> RawResponse:
+        payload = dict(self.payload)
+        payload["messages"] = [self.sys_message.convert()] + [m.convert() for m in message_list]
+
+        if temperature is not None:
+            payload["temperature"] = temperature
+
+        return to_raw_response(self.client.chat.completions.create(**payload))
+
     def generate_classification(self, msg : Message):
-        payload = self.payload
-        
-        messages = [self.sys_message.convert()]
-        messages.append(msg.convert())
-        
-        payload["messages"] = messages
-        
-        result = self.client.chat.completions.create(**payload).choices[0].message.content
-        
-        return result
-    
+        return self.generate_raw([msg]).content
+
 class ExtractMeaningLM(LLMClient):
     pass
 
