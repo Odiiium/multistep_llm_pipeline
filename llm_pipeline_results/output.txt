@@ -14,7 +14,7 @@
             "feature": "customization options",
             "suggestion": "more customization options"
         },
-        "final_answer": "Thank you for your positive feedback on the update, and for your thoughtful suggestion about adding more customization options. We always appreciate hearing how we can improve the experience, and we'll be sure to share your input with our product team for consideration in future releases.",
+        "final_answer": "Thank you for your feedback! We're glad you're enjoying the new update. Your suggestion about adding more customization options is noted and will be shared with our team as we continue improving the experience.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -44,7 +44,7 @@
             "feature": "documentation",
             "suggestion": "better documentation for new users"
         },
-        "final_answer": "Thank you for your suggestion about improving the documentation for new users. We appreciate this feedback and will share it with our team to help make the onboarding experience clearer and more helpful for everyone.",
+        "final_answer": "Thank you for your suggestion. We appreciate your feedback about the documentation for new users and we're always looking to improve the onboarding experience. Your input will be shared with our content team to help make our guides clearer and more helpful for everyone.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -70,10 +70,10 @@
             "language": null,
             "intent": "support",
             "problem": "Application crashes when uploading a file.",
-            "product": "Application",
+            "product": "application",
             "error_code": null
         },
-        "final_answer": "I'm sorry you're experiencing this issue. Let's troubleshoot it step by step. First, could you tell me what type and size of file you're trying to upload, and whether you see any specific error message before the crash? Also, does this happen with all files or just certain ones?",
+        "final_answer": "I’m sorry you’re running into this issue. Let’s troubleshoot the crash during file uploads. First, could you let me know what file type and size you’re trying to upload? Also, are you seeing any specific error message or code before the crash? This will help pinpoint the cause.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -102,7 +102,7 @@
             "product": "Account",
             "error_code": null
         },
-        "final_answer": "I'm sorry you're having trouble logging in. To help reset your password, please provide the email address or username associated with your account so I can send you a password reset link.",
+        "final_answer": "I'm sorry you're having trouble logging into your account. Let me help you reset your password. Could you please provide the email address associated with your account so I can send you a password reset link?",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -122,163 +122,17 @@
         "start_question": "I would like to suggest adding dark mode to the application.",
         "intent": "feedback",
         "field_extraction": {
-            "summary": "I would like to suggest adding dark mode to the application.",
+            "summary": null,
             "sentiment": null,
             "urgency": null,
             "language": null,
-            "intent": "feedback",
+            "intent": null,
             "feedback_type": "suggestion",
             "subject": null,
             "feature": "dark mode",
-            "suggestion": "add dark mode to the application"
+            "suggestion": "adding dark mode to the application"
         },
-        "final_answer": "Thank you for your suggestion to add dark mode to the application. We always appreciate hearing ideas from our users, and this is a great one. I'll make sure your feedback is shared with our team for consideration in future updates.",
-        "judge_result": {
-            "passed": true,
-            "score": 10,
-            "issues": []
-        },
-        "degraded_steps": [],
-        "fallback_levels": {
-            "extract_sense": 0,
-            "intent": 0,
-            "extract_fields": 0,
-            "final_answer": 0,
-            "judge": 0
-        }
-    },
-    {
-        "question_index": 5,
-        "start_question": "How much does your premium plan cost?",
-        "intent": "sales",
-        "field_extraction": {
-            "summary": "Inquiry about the cost of the premium plan.",
-            "sentiment": "neutral",
-            "urgency": "low",
-            "language": null,
-            "intent": "sales",
-            "interester_product": "premium plan",
-            "budget": null,
-            "items_count": null
-        },
-        "final_answer": "Our Premium plan is priced at $29.99 per month, which includes unlimited access to all features, priority support, and advanced analytics. Would you like me to go over the specific benefits included in this plan?",
-        "judge_result": {
-            "passed": true,
-            "score": 10,
-            "issues": []
-        },
-        "degraded_steps": [],
-        "fallback_levels": {
-            "extract_sense": 0,
-            "intent": 0,
-            "extract_fields": 0,
-            "final_answer": 0,
-            "judge": 0
-        }
-    },
-    {
-        "question_index": 6,
-        "start_question": "My payment was declined and I need assistance resolving the issue.",
-        "intent": "support",
-        "field_extraction": {
-            "summary": "Payment was declined and assistance is needed to resolve the issue.",
-            "sentiment": "negative",
-            "urgency": "high",
-            "language": null,
-            "intent": "support",
-            "problem": "Payment declined",
-            "product": null,
-            "error_code": null
-        },
-        "final_answer": "I'm sorry to hear your payment was declined. To help resolve this, could you please let me know which payment method you were using and whether you received a specific error code or message when the decline occurred? In the meantime, I recommend checking that your card details are correct, your card hasn't expired, and that your bank hasn't flagged the transaction as suspicious.",
-        "judge_result": {
-            "passed": true,
-            "score": 10,
-            "issues": []
-        },
-        "degraded_steps": [],
-        "fallback_levels": {
-            "extract_sense": 0,
-            "intent": 0,
-            "extract_fields": 0,
-            "final_answer": 0,
-            "judge": 0
-        }
-    },
-    {
-        "question_index": 7,
-        "start_question": "I want a refund because the product did not meet my expectations.",
-        "intent": "complaint",
-        "field_extraction": {
-            "summary": null,
-            "sentiment": "negative",
-            "urgency": "medium",
-            "language": null,
-            "intent": "complaint",
-            "complaint_reason": "product did not meet expectations",
-            "requested_resolution": "refund"
-        },
-        "final_answer": "I'm sorry to hear that the product didn't meet your expectations. I'd be happy to help you with a refund request. Please provide your order number and the product name so I can look into this and process it for you.",
-        "judge_result": {
-            "passed": true,
-            "score": 10,
-            "issues": []
-        },
-        "degraded_steps": [],
-        "fallback_levels": {
-            "extract_sense": 0,
-            "intent": 0,
-            "extract_fields": 0,
-            "final_answer": 0,
-            "judge": 0
-        }
-    },
-    {
-        "question_index": 8,
-        "start_question": "How does machine learning work?",
-        "intent": "general_question",
-        "field_extraction": {
-            "summary": null,
-            "sentiment": null,
-            "urgency": null,
-            "language": null,
-            "intent": "general_question",
-            "topic": "machine learning",
-            "question_type": "definition",
-            "entities": []
-        },
-        "final_answer": "Machine learning is a method of teaching computers to learn from data without being explicitly programmed for every task. Instead of following static instructions, algorithms identify patterns in large sets of examples—like recognizing faces in photos or predicting house prices—and improve their performance over time as they process more information. Essentially, the system builds its own rules by finding correlations in the data you give it.",
-        "judge_result": {
-            "passed": true,
-            "score": 10,
-            "issues": []
-        },
-        "degraded_steps": [],
-        "fallback_levels": {
-            "extract_sense": 0,
-            "intent": 0,
-            "extract_fields": 0,
-            "final_answer": 0,
-            "judge": 0
-        }
-    },
-    {
-        "question_index": 9,
-        "start_question": "What is the capital of France?",
-        "intent": "general_question",
-        "field_extraction": {
-            "summary": "What is the capital of France?",
-            "sentiment": null,
-            "urgency": null,
-            "language": null,
-            "intent": "general_question",
-            "topic": "capital of France",
-            "question_type": "information",
-            "entities": [
-                "France"
-            ]
-        },
-        "final_answer": "The capital of France is Paris.",
+        "final_answer": "Thank you for your suggestion about adding dark mode to the application. We appreciate your input, as feature requests like this help us improve the user experience. I'll make sure your feedback is shared with the product team for future consideration.",
         "judge_result": {
             "passed": true,
             "score": 10,

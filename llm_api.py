@@ -1,5 +1,3 @@
-from transformers import AutoTokenizer
-import torch as torch
 from openai import OpenAI,Timeout
 from dataclasses import dataclass, field
 from data_models import SystemMessage, Message, UserMessage, RawResponse
@@ -87,13 +85,15 @@ class LLMClient:
         return self.generate_raw(message_list).content
 
 class IntentClassifierLM:
-    def __init__(self, api_key : str, model_name : str, sys_message : SystemMessage, payload_schema : dict, temperature = 0.01):
+    def __init__(self, api_key : str, model_name : str, sys_message : SystemMessage, payload_schema : dict, temperature = 0.01, base_url : str | None = None):
         self.api_key = api_key
         self.model_name = model_name
         self.sys_message = sys_message
         self.payload_schema = payload_schema
         self.temperature = temperature
+        self.base_url = base_url
         self.client = OpenAI(api_key=api_key,
+                             base_url=base_url,
                              timeout=DEFAULT_TIMEOUT,
                              max_retries=MAX_RETRIES)
         self.construct_payload()

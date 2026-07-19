@@ -1,5 +1,7 @@
+import argparse
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from dotenv import load_dotenv
 from promts import *
 from llm_api import *
@@ -11,6 +13,19 @@ from llm_core.fallback import classify_intent_offline, condense_message, empty_f
 DETERMINISTIC_LEVEL = 3
 SKIPPED_LEVEL = 4
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_SESSION_DIR = os.path.join(BASE_DIR, "llm_sessions")
+
+DEFAULT_MODEL = "deepseek-ai/DeepSeek-V4-Flash"
+DEFAULT_BASE_URL = "https://api.deepinfra.com/v1/openai"
+DEFAULT_SIMPLE_MODEL = "gpt-4o-mini"
+
+DEEPINFRA_BASE_URL = "https://api.deepinfra.com/v1/openai"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+class PipelineConfigurationError(RuntimeError):
+    pass
+
 class MultiStepLLMPipeline:
     def __init__(self, extract_client : ExtractMeaningLM,
                  classifier_client : IntentClassifierLM,
@@ -19,7 +34,9 @@ class MultiStepLLMPipeline:
                  judge_client : SelfCheckLM,
                  input_path : str,
                  output_path : str,
-                 logger = None):
+                 logger = None,
+                 strict_extraction : bool = True):
+        self.strict_extraction = strict_extraction
         self.extractClient = extract_client
         self.classifierClient = classifier_client
         self.fieldExtractorClient = field_extractor_client
@@ -61,7 +78,8 @@ class MultiStepLLMPipeline:
             model_type = INTENT_MODELS[intent]
 
             self.fieldExtractorClient.sys_message = SystemMessage(content=COMMON_EXTRACTION_PROMPT + "\n" + EXTRACTION_PROMPT_REGISTRY[intent])
-            self.fieldExtractorClient.set_response_schema_format(construct_api_payload(model_type.model_json_schema(), strict=True))
+            self.fieldExtractorClient.set_response_schema_format(
+                construct_api_payload(model_type.model_json_schema(), strict=self.strict_extraction))
 
             guard = GuardedLLMClient(self.fieldExtractorClient, for_extraction(model_type), self.logger)
             result = guard.call([msg])
@@ -99,6 +117,12 @@ class MultiStepLLMPipeline:
             return result
 
     def mark_degraded(self, name : str, result : LLMCallResult, degraded : list, levels : dict, level : int):
+        if result.failure is FailureKind.fatal:
+            raise PipelineConfigurationError(
+                f"step '{name}' hit a non-retryable error: {result.detail}. "
+                f"This is a configuration problem (key, model or endpoint), not a model failure. "
+                f"Check --api-key / --model / --base-url and their --simple-* counterparts.")
+
         degraded.append(name)
         levels[name] = level
 
@@ -142,6 +166,11 @@ class MultiStepLLMPipeline:
         answer_result = self.generate_final_answer(msg, sense, intent, sentiment, field_extraction)
 
         if not answer_result.ok:
+            if answer_result.failure is FailureKind.fatal:
+                raise PipelineConfigurationError(
+                    f"step 'final_answer' hit a non-retryable error: {answer_result.detail}. "
+                    f"Check --api-key / --model / --base-url.")
+
             self.logger.error("final_answer is required and produced nothing, dropping line %d", step)
             return None
 
@@ -167,6 +196,55 @@ class MultiStepLLMPipeline:
                                 judge_result=judged,
                                 degraded_steps=degraded,
                                 fallback_levels=levels)
+
+    def run_interactive(self, session_dir : str = None):
+        session_dir = session_dir or DEFAULT_SESSION_DIR
+        os.makedirs(session_dir, exist_ok=True)
+
+        session_path = os.path.join(session_dir, f"session_{datetime.now():%Y%m%d_%H%M%S}.jsonl")
+        index = 0
+
+        print(f"Interactive pipeline. Session file: {session_path}")
+        print("Type a message and press Enter. Type 'exit' or press Ctrl+D to quit.\n")
+
+        while True:
+            try:
+                message = input("message> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not message:
+                continue
+
+            if message.lower() in ("exit", "quit"):
+                break
+
+            with self.logger.context(trace_id=self.logger.new_trace(), line_idx=index):
+                try:
+                    result = self.generate_pipeline_step(UserMessage(content=message), step=index)
+                except PipelineConfigurationError as exc:
+                    self.logger.error("%s", exc)
+                    break
+                except Exception as exc:
+                    self.logger.error("interactive step crashed with %s: %s", type(exc).__name__, exc)
+                    result = None
+
+            payload = result.model_dump(mode="json") if result else {"question_index": index,
+                                                                     "start_question": message,
+                                                                     "error": "pipeline failed"}
+
+            print(json.dumps(payload, indent=2, ensure_ascii=False))
+            print()
+            print(payload["final_answer"])
+            print()
+            
+            with open(session_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+            index += 1
+
+        print(f"Session saved to {session_path}")
 
     @property
     def partial_path(self) -> str:
@@ -213,6 +291,9 @@ class MultiStepLLMPipeline:
 
                     try:
                         answer = self.generate_pipeline_step(UserMessage(content=line), step=index)
+                    except PipelineConfigurationError as exc:
+                        self.logger.error("aborting run: %s", exc)
+                        raise
                     except Exception as exc:
                         self.logger.error("line %d crashed with %s: %s", index, type(exc).__name__, exc)
                         failed_lines.append(index)
@@ -277,9 +358,11 @@ def build_llm_pipeline(settings : LLMPipelineSettings, input_path : str, output_
     intent_client = IntentClassifierLM(api_key=settings.simple_model_api_key,
                                        model_name=settings.simple_model_name,
                                        sys_message=SystemMessage(content=INTENT_PROMPT),
-                                       payload_schema=INTENT_PAYLOAD_SCHEMA)
-    
+                                       payload_schema=INTENT_PAYLOAD_SCHEMA,
+                                       base_url=settings.simple_model_url)
+
     field_extractor_settings = LLMSettings(model_name=settings.simple_model_name,
+                                           base_url=settings.simple_model_url,
                                            temperature=.01)
     
     field_extractor_client = FieldExtractorLM(api_key=settings.simple_model_api_key,
@@ -306,4 +389,70 @@ def build_llm_pipeline(settings : LLMPipelineSettings, input_path : str, output_
                                 response_generator_client=response_generator_client,
                                 judge_client=judge_client,
                                 input_path=input_path,
-                                output_path=output_path)
+                                output_path=output_path,
+                                strict_extraction=settings.simple_model_url is None)
+
+def add_llm_arguments(parser : argparse.ArgumentParser):
+    load_dotenv()
+
+    parser.add_argument("--api-key", default=None,
+                        help="API key for the main model (falls back to env DEEP_INFRA_KEY)")
+    parser.add_argument("--model", default=DEFAULT_MODEL,
+                        help=f"main model name (default {DEFAULT_MODEL})")
+    parser.add_argument("--base-url", default=DEFAULT_BASE_URL,
+                        help=f"main model endpoint (default {DEFAULT_BASE_URL})")
+
+    parser.add_argument("--simple-api-key", default=None,
+                        help="API key for intent and field extraction (falls back to env OPEN_AI_KEY "
+                             "only when --api-key is not given). When both heads share a key, they also "
+                             "share the model and the endpoint unless overridden")
+    parser.add_argument("--simple-model", default=None,
+                        help=f"model for intent and field extraction (default {DEFAULT_SIMPLE_MODEL})")
+    parser.add_argument("--simple-base-url", default=None,
+                        help="endpoint for intent and field extraction (default: OpenAI)")
+
+    return parser
+
+def settings_from_args(args) -> LLMPipelineSettings:
+    api_key = args.api_key or os.getenv("DEEP_INFRA_KEY")
+
+    if not api_key:
+        raise SystemExit("No API key. Pass --api-key or set DEEP_INFRA_KEY in .env")
+
+    if args.simple_api_key:
+        simple_key = args.simple_api_key
+    elif args.api_key:
+        simple_key = api_key
+    else:
+        simple_key = os.getenv("OPEN_AI_KEY") or api_key
+
+    if simple_key == api_key:
+        simple_model = args.simple_model or args.model
+        simple_url = args.simple_base_url or args.base_url
+    else:
+        simple_model = args.simple_model or DEFAULT_SIMPLE_MODEL
+        simple_url = args.simple_base_url
+
+    return LLMPipelineSettings(general_model_name=args.model,
+                               general_model_url=args.base_url,
+                               general_model_api_key=api_key,
+                               simple_model_name=simple_model,
+                               simple_model_api_key=simple_key,
+                               simple_model_url=simple_url)
+
+def main():
+    parser = argparse.ArgumentParser(
+        prog="multistep_llm_pipeline",
+        description="Run the multi-step LLM pipeline interactively: type a message, get a JSON result.")
+    add_llm_arguments(parser)
+    parser.add_argument("--session-dir", default=DEFAULT_SESSION_DIR,
+                        help="directory for per-session result files")
+    args = parser.parse_args()
+
+    pipeline = build_llm_pipeline(settings_from_args(args),
+                                  input_path=None,
+                                  output_path=os.path.join(DEFAULT_SESSION_DIR, "interactive.json"))
+    pipeline.run_interactive(session_dir=args.session_dir)
+
+if __name__ == "__main__":
+    main()
