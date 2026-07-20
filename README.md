@@ -183,18 +183,15 @@ The application crashes every time I try to upload a file.
 {
   "question_index": 2,
   "start_question": "The application crashes every time I try to upload a file.",
-  "intent": "support",
-  "field_extraction": {
-    "summary": "The application crashes during file upload.",
-    "sentiment": "negative",
-    "urgency": "high",
-    "language": null,
-    "intent": "support",
-    "problem": "Application crashes when uploading a file.",
-    "product": "Application",
-    "error_code": null
-  },
-  "final_answer": "I'm sorry you're experiencing this issue. Let's troubleshoot it step by step. First, could you tell me what type and size of file you're trying to upload, and whether you see any specific error message before the crash?",
+  "summary": "The application crashes every time I try to upload a file.",
+  "category": "support",
+  "sentiment": "negative",
+  "key_points": [
+    "The application crashes consistently during the file upload process.",
+    "The issue is urgent and has a negative impact on user experience.",
+    "The root cause could be related to file size, file type, or a bug in the upload module."
+  ],
+  "final_answer": "I'm sorry you're experiencing this crash during file uploads. Let's try a few steps to resolve it. First, check if the file is under 25 MB and in a common format like PDF or JPEG. If it is, try clearing your browser cache or restarting the app.",
   "judge_result": {
     "passed": true,
     "score": 10,
@@ -210,7 +207,6 @@ The application crashes every time I try to upload a file.
   }
 }
 ```
-
 `degraded_steps` and `fallback_levels` show at what cost the result was obtained. An example of a line where sense extraction failed at every level and the deterministic fallback kicked in:
 
 ```json
@@ -218,7 +214,7 @@ The application crashes every time I try to upload a file.
 "fallback_levels": {"extract_sense": 3, "intent": 0, "extract_fields": 0, "final_answer": 0, "judge": 0}
 ```
 
-The set of `field_extraction` fields depends on the intent: `support` has `problem` / `product` / `error_code`, `sales` has `interester_product` / `budget` / `items_count`, `feedback` has `feedback_type` / `subject` / `feature` / `suggestion`, and so on.
+Internally the extraction step uses a schema specific to each intent — `support` has `problem` / `product` / `error_code`, `sales` has `interester_product` / `budget` / `items_count`, `feedback` has `feedback_type` / `subject` / `feature` / `suggestion`, and so on. These fields are context for the answer step; only `summary` and `sentiment` are lifted into the result, so the output shape stays the same for every intent.
 
 ---
 
@@ -270,7 +266,7 @@ Every input message goes through a chain of five steps:
 | `extract_sense` | Extracts the gist of the message without filler | optional |
 | `intent` | Classifies the intent: `support`, `feedback`, `complaint`, `sales`, `general_question` | degradable |
 | `extract_fields` | Pulls out structured fields using a schema specific to each intent | degradable |
-| `final_answer` | Generates the answer for the user | **required** |
+| `final_answer` | Generates the answer for the user plus exactly 3 key points | **required** |
 | `judge` | Checks the answer for contradictions and made-up facts | optional |
 
 The pipeline can run on two different models: a "heavy" one for generation and a "simple" one for classification and field extraction. You can also point everything at a single model.

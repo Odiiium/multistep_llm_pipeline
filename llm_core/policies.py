@@ -2,6 +2,7 @@ from data_models import (
     Criticality,
     FallbackMode,
     FallbackStep,
+    FinalAnswerResult,
     IntentLMAnswer,
     JudgedLMResult,
     StepPolicy,
@@ -61,7 +62,7 @@ STEP_POLICIES = {
 
     "final_answer": StepPolicy(
         name="final_answer",
-        model=None,
+        model=FinalAnswerResult,
         min_chars=20,
         soft_max_chars=900,
         hard_max_chars=3000,

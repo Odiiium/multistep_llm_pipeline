@@ -593,14 +593,22 @@ Rules:
 """
 
 FALLBACK_FINAL_ANSWER_PROMPT = """
-Write a short reply to the user.
+Answer the user and list the three main points of their request.
+
+Return one JSON object and nothing else:
+{"key_points": ["point one", "point two", "point three"], "final_answer": "the reply"}
+
+Example input:
+"The app crashes when I upload a file."
+
+Example output:
+{"key_points": ["The application crashes.", "The crash happens on file upload.", "The user needs a fix."], "final_answer": "Sorry about the crashes. Could you tell me the file type and size, and any error message you see? That will help us pin down the cause."}
 
 Rules:
-- Two to four sentences.
-- Address what the user asked, nothing else.
-- If key information is missing, ask one clarifying question.
+- key_points must contain exactly three short statements.
+- final_answer is two to four sentences and always ends with a finished sentence.
 - Never mention internal analysis, intent or extracted fields.
-- Plain text only. Always finish your last sentence.
+- No markdown, no code fences, no extra text.
 """
 
 FALLBACK_SELF_CHECK_PROMPT = """
@@ -630,6 +638,28 @@ def get_final_answer_prompt(intent : str):
         Do NOT reclassify the intent.
         Do NOT ignore the extracted fields.
         Use them as the main source of context.
+
+        Return one JSON object with exactly two fields:
+
+        {{
+          "key_points": ["...", "...", "..."],
+          "final_answer": "..."
+        }}
+
+        key_points:
+        - Exactly three items, no more and no less.
+        - Each item is one short factual statement about the user's request,
+          ordered from most to least important.
+        - Statements only, not instructions to the user.
+
+        final_answer:
+        - The reply the user will actually see.
+        - Aim for 2-5 sentences, roughly up to 900 characters.
+        - Always finish your last sentence; cover fewer points rather than
+          stopping mid-thought.
+        - Never mention internal analysis, intent, key points or extracted fields.
+
+        Return only the JSON object. No markdown, no code fences, no extra text.
     """
     return PROMPT_REGISTRY_DAY_4[intent] + FINAL_ANSWER_DATA_PROMPT
 

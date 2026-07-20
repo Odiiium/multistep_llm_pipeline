@@ -102,7 +102,8 @@ class MultiStepLLMPipeline:
             result = self.guards["final_answer"].call([message])
 
             if result.ok:
-                self.logger.info("final answer ready (%d chars, attempts %d)", len(result.content), result.attempts)
+                self.logger.info("final answer ready (%d chars, %d key points, attempts %d)",
+                                 len(result.parsed.final_answer), len(result.parsed.key_points), result.attempts)
 
             return result
 
@@ -163,8 +164,9 @@ class MultiStepLLMPipeline:
             field_extraction = empty_fields_for(intent)
             self.mark_degraded("extract_fields", fields_result, degraded, levels, DETERMINISTIC_LEVEL)
 
-        sentiment = field_extraction.sentiment.value if field_extraction.sentiment is not None else "unknown"
-        answer_result = self.generate_final_answer(msg, sense, intent, sentiment, field_extraction)
+        sentiment = field_extraction.sentiment or SentimentResult.neutral
+        prompt_sentiment = field_extraction.sentiment.value if field_extraction.sentiment is not None else "unknown"
+        answer_result = self.generate_final_answer(msg, sense, intent, prompt_sentiment, field_extraction)
 
         if not answer_result.ok:
             if answer_result.failure is FailureKind.fatal:
@@ -176,8 +178,9 @@ class MultiStepLLMPipeline:
             return None
 
         levels["final_answer"] = answer_result.fallback_level
+        answer : FinalAnswerResult = answer_result.parsed
 
-        judge_result = self.generate_judge_results(msg.content, answer_result.content)
+        judge_result = self.generate_judge_results(msg.content, answer.final_answer)
 
         if judge_result.ok:
             judged = judge_result.parsed
@@ -191,9 +194,11 @@ class MultiStepLLMPipeline:
 
         return PipelineLMResult(question_index=step,
                                 start_question=msg.content,
-                                intent=intent,
-                                field_extraction = field_extraction,
-                                final_answer=answer_result.content,
+                                summary=field_extraction.summary or sense,
+                                category=intent,
+                                sentiment=sentiment,
+                                key_points=answer.key_points,
+                                final_answer=answer.final_answer,
                                 judge_result=judged,
                                 degraded_steps=degraded,
                                 fallback_levels=levels)
@@ -371,8 +376,9 @@ def build_llm_pipeline(settings : LLMPipelineSettings, input_path : str, output_
     field_extractor_client = FieldExtractorLM(api_key=settings.simple_model_api_key,
                                               llm_settings=field_extractor_settings)
     
-    response_generator_settings = LLMSettings(model_name=settings.general_model_name, 
-                                              base_url=settings.general_model_url)
+    response_generator_settings = LLMSettings(model_name=settings.general_model_name,
+                                              base_url=settings.general_model_url,
+                                              payload_schema=construct_api_payload(FinalAnswerResult.model_json_schema()))
     
     response_generator_client = ResponseGeneratorLM(api_key=settings.general_model_api_key,
                                                     llm_settings=response_generator_settings)

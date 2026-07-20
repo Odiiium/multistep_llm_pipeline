@@ -119,11 +119,17 @@ class JudgedLMResult(BaseModel):
     score : int = Field(ge=1, le=10)
     issues : list[str] = []
 
+class FinalAnswerResult(BaseModel):
+    key_points : list[str] = Field(min_length=3, max_length=3)
+    final_answer : str = Field(min_length=1, max_length=3000)
+
 class PipelineLMResult(BaseModel):
     question_index : int
     start_question : str
-    intent : str
-    field_extraction : Any
+    summary : str
+    category : str
+    sentiment : str
+    key_points : list[str]
     final_answer : str
     judge_result : JudgedLMResult | None = None
     degraded_steps : list[str] = []
