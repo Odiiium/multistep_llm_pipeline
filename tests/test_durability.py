@@ -23,8 +23,11 @@ FIELDS = json.dumps({
     "product": "application",
     "error_code": None,
 })
-ANSWER = "Sorry about that. Could you tell us which file type triggers the crash?"
+ANSWER_TEXT = "Sorry about that. Could you tell us which file type triggers the crash?"
+KEY_POINTS = ["The application crashes.", "The crash happens on upload.", "The user needs a fix."]
+ANSWER = json.dumps({"key_points": KEY_POINTS, "final_answer": ANSWER_TEXT})
 JUDGE = '{"passed": true, "score": 9, "issues": []}'
+REQUIRED_FIELDS = ("summary", "category", "sentiment", "key_points", "final_answer")
 
 LINES = [
     "The application crashes every time I try to upload a file.",
@@ -37,7 +40,7 @@ def check(name, condition, detail=""):
     mark = "  ok  " if condition else " FAIL "
     print(f"[{mark}] {name}" + (f"  -> {detail}" if detail and not condition else ""))
 
-def build_pipeline(workdir, judge_script=None, answer_script=None):
+def build_pipeline(workdir, judge_script=None, answer_script=None, fields_script=None):
     input_path = os.path.join(workdir, "input.txt")
     output_path = os.path.join(workdir, "output.txt")
 
@@ -48,7 +51,7 @@ def build_pipeline(workdir, judge_script=None, answer_script=None):
     pipeline = MultiStepLLMPipeline(
         extract_client=FakeLLMClient([Return(SENSE)]),
         classifier_client=FakeLLMClient([Return(INTENT)]),
-        field_extractor_client=FakeLLMClient([Return(FIELDS)]),
+        field_extractor_client=FakeLLMClient(fields_script or [Return(FIELDS)]),
         response_generator_client=FakeLLMClient(answer_script or [Return(ANSWER)]),
         judge_client=FakeLLMClient(judge_script or [Return(JUDGE)]),
         input_path=input_path,
@@ -88,6 +91,18 @@ def test_happy_path():
         check("output matches partial", len(final) == len(partial))
         check("fallback levels recorded", final[0]["fallback_levels"].get("final_answer") == 0,
               str(final[0].get("fallback_levels")))
+
+        row = final[0]
+        check("all required fields are flat", all(f in row for f in REQUIRED_FIELDS),
+              str(sorted(row.keys())))
+        check("no required field is null", all(row[f] is not None for f in REQUIRED_FIELDS))
+        check("field_extraction dropped from output", "field_extraction" not in row)
+        check("exactly three key points", len(row["key_points"]) == 3, str(row["key_points"]))
+        check("final_answer is the prose, not the json", row["final_answer"] == ANSWER_TEXT,
+              row["final_answer"][:60])
+        check("summary lifted to top level", row["summary"] == "app crashes on upload", row["summary"])
+        check("category comes from the intent step", row["category"] == "support", row["category"])
+        check("sentiment lifted to top level", row["sentiment"] == "negative", row["sentiment"])
     finally:
         shutil.rmtree(workdir)
 
@@ -108,7 +123,31 @@ def test_optional_step_degrades():
         check("judge_result is null", final[0]["judge_result"] is None)
         check("degraded_steps names judge", final[0]["degraded_steps"] == ["judge"],
               str(final[0]["degraded_steps"]))
-        check("final answer preserved", final[0]["final_answer"] == ANSWER)
+        check("final answer preserved", final[0]["final_answer"] == ANSWER_TEXT)
+        check("key points preserved when judge degrades", final[0]["key_points"] == KEY_POINTS)
+    finally:
+        shutil.rmtree(workdir)
+
+def test_no_nulls_when_extraction_degrades():
+    print("\n--- required fields stay filled when extract_fields degrades ---")
+    workdir = tempfile.mkdtemp()
+
+    try:
+        pipeline, logger, output_path = build_pipeline(workdir, fields_script=[Return("not json ever")])
+        summary = pipeline.process_generation_pipeline()
+
+        check("lines still complete", summary["lines_completed"] == 3, str(summary["lines_completed"]))
+
+        with open(output_path, encoding="utf-8") as f:
+            row = json.load(f)[0]
+
+        check("extract_fields marked degraded", row["degraded_steps"] == ["extract_fields"],
+              str(row["degraded_steps"]))
+        check("no required field is null", all(row[f] is not None for f in REQUIRED_FIELDS),
+              str({f: row[f] for f in REQUIRED_FIELDS}))
+        check("summary falls back to the extracted sense", row["summary"] == SENSE, row["summary"])
+        check("sentiment falls back to neutral", row["sentiment"] == "neutral", row["sentiment"])
+        check("category still comes from the intent step", row["category"] == "support", row["category"])
     finally:
         shutil.rmtree(workdir)
 
@@ -189,6 +228,7 @@ def test_hard_crash_preserves_finished_lines():
 def main():
     test_happy_path()
     test_optional_step_degrades()
+    test_no_nulls_when_extraction_degrades()
     test_required_step_drops_line()
     test_line_isolation()
     test_hard_crash_preserves_finished_lines()
