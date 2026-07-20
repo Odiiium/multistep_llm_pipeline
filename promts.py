@@ -500,58 +500,6 @@ EXTRACTION_PROMPT_REGISTRY = {
     """
 }
 
-FINAL_ANSWER_SYSTEM_PROMPT = """
-You are a professional AI assistant responsible for producing final user-facing answers.
-
-Your role:
-- Solve the user's request.
-- Use provided intent and extracted information.
-- Generate only the final response that will be shown to the user.
-
-Behavior rules:
-
-GENERAL:
-- Never reveal internal processing.
-- Never mention intent classification.
-- Never mention extracted fields.
-- Never explain your reasoning process.
-- Always answer as if you already understood the request.
-
-STYLE:
-- Be concise.
-- Be clear.
-- Be polite.
-- Avoid unnecessary introductions.
-- Avoid generic phrases like "I understand your problem".
-
-SUPPORT:
-- Help troubleshoot the issue.
-- Provide actionable steps.
-- Ask for missing technical details if needed.
-
-SALES:
-- Help the customer make a purchase decision.
-- Explain benefits.
-- Ask for missing requirements.
-
-COMPLAINT:
-- Acknowledge the issue.
-- Stay calm and professional.
-- Offer resolution or next steps.
-
-FEEDBACK:
-- Thank the user for feedback.
-- Address suggestions constructively.
-- If appropriate, explain possible improvements.
-
-GENERAL QUESTION:
-- Provide accurate explanation.
-- Adapt complexity to the question.
-- Ask clarification if the question is ambiguous.
-
-Always generate only the final answer text.
-"""
-
 SELF_CHECK_PROMPT = """
 You are a quality checker for an AI assistant response.
 
@@ -596,34 +544,6 @@ def build_final_answer_message(msg, intent, sentiment, sense, field_extraction):
         Extracted information:
         {field_extraction}
     """
-
-def get_final_asnwer_prompt():
-    FINAL_ANSWER_DATA_PROMPT = f"""
-        You are an AI customer assistant.
-
-        Your task is to generate the final answer to the user.
-
-        You already have extracted information about the user's request.
-        Do NOT reclassify the intent.
-        Do NOT ignore the extracted fields.
-        Use them as the main source of context.
-
-        Generate the final answer according to these rules:
-
-        1. Answer directly to the user's request.
-        2. Use extracted fields when they are relevant.
-        3. Do not mention internal classification, intent, fields, or analysis.
-        4. Do not say "I detected that your intent is..."
-        5. Be concise but helpful: aim for 2-5 sentences, roughly up to 900
-           characters. Always finish your final sentence - if you are running
-           long, cover fewer points rather than stopping mid-thought.
-        6. If information is missing, ask a relevant clarification question.
-        7. Maintain a professional and friendly tone.
-
-        Final answer:
-    """
-    
-    return FINAL_ANSWER_DATA_PROMPT + FINAL_ANSWER_SYSTEM_PROMPT
 
 FALLBACK_SENSE_EXTRACTION_PROMPT = """
 Restate the user's message as plain text.
@@ -703,6 +623,15 @@ REPAIR_HINTS = {
     "truncated": "Your previous answer was cut off before it finished. Write a shorter answer that fits completely and ends with a finished sentence.",
     "too_long": "Your previous answer exceeded the allowed length. Write a shorter answer that keeps the essential content and ends with a finished sentence.",
 }
+
+def get_final_answer_prompt(intent : str):
+    FINAL_ANSWER_DATA_PROMPT = f"""
+        You already have extracted information about the user's request.
+        Do NOT reclassify the intent.
+        Do NOT ignore the extracted fields.
+        Use them as the main source of context.
+    """
+    return PROMPT_REGISTRY_DAY_4[intent] + FINAL_ANSWER_DATA_PROMPT
 
 def build_repair_message(failure : str, detail : str | None, previous_answer : str | None, limit : int = 1200):
     hint = REPAIR_HINTS.get(failure, "Your previous answer was rejected. Produce a corrected answer.")

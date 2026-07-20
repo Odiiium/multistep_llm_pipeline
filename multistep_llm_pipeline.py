@@ -91,7 +91,8 @@ class MultiStepLLMPipeline:
 
     def generate_final_answer(self, msg : UserMessage, sense : str, intent : str, sentiment : str, field_extraction) -> LLMCallResult:
         with self.logger.context(step="final_answer"):
-            self.responseGeneratorClient.sys_message = SystemMessage(content=get_final_asnwer_prompt())
+            
+            self.responseGeneratorClient.sys_message = SystemMessage(content=get_final_answer_prompt(intent))
 
             message = UserMessage(content=build_final_answer_message(msg.content,
                                                                     intent=intent,
@@ -229,15 +230,17 @@ class MultiStepLLMPipeline:
                 except Exception as exc:
                     self.logger.error("interactive step crashed with %s: %s", type(exc).__name__, exc)
                     result = None
-
+            
             payload = result.model_dump(mode="json") if result else {"question_index": index,
                                                                      "start_question": message,
                                                                      "error": "pipeline failed"}
 
             print(json.dumps(payload, indent=2, ensure_ascii=False))
             print()
-            print(payload["final_answer"])
-            print()
+    
+            if result is not None:
+                print(payload["final_answer"])
+                print()
             
             with open(session_path, "a", encoding="utf-8") as f:
                 f.write(json.dumps(payload, ensure_ascii=False) + "\n")
