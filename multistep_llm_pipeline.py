@@ -62,9 +62,9 @@ class MultiStepLLMPipeline:
 
             return result
 
-    def generate_intent(self, msg : UserMessage) -> LLMCallResult:
+    def generate_intent(self, sense_msg : UserMessage) -> LLMCallResult:
         with self.logger.context(step="intent"):
-            result = self.guards["intent"].call([msg])
+            result = self.guards["intent"].call([sense_msg])
 
             if result.ok:
                 answer : IntentLMAnswer = result.parsed
@@ -73,7 +73,7 @@ class MultiStepLLMPipeline:
 
             return result
 
-    def extract_fields(self, msg : UserMessage, intent) -> LLMCallResult:
+    def extract_fields(self, sense_msg : UserMessage, intent) -> LLMCallResult:
         with self.logger.context(step="extract_fields"):
             model_type = INTENT_MODELS[intent]
 
@@ -82,7 +82,7 @@ class MultiStepLLMPipeline:
                 construct_api_payload(model_type.model_json_schema(), strict=self.strict_extraction))
 
             guard = GuardedLLMClient(self.fieldExtractorClient, for_extraction(model_type), self.logger)
-            result = guard.call([msg])
+            result = guard.call([sense_msg])
 
             if result.ok:
                 self.logger.info("fields extracted (%s, attempts %d)", model_type.__name__, result.attempts)
@@ -145,17 +145,17 @@ class MultiStepLLMPipeline:
             sense = condense_message(msg.content)
             self.mark_degraded("extract_sense", sense_result, degraded, levels, DETERMINISTIC_LEVEL)
 
-        intent_result = self.generate_intent(msg=msg)
+        intent_result = self.generate_intent(sense_msg=UserMessage(content=(sense or msg.content)))
 
         if intent_result.ok:
             intent = intent_result.parsed.intent.value
             levels["intent"] = intent_result.fallback_level
         else:
-            intent = classify_intent_offline(msg.content)
+            intent = classify_intent_offline(sense or msg.content)
             self.mark_degraded("intent", intent_result, degraded, levels, DETERMINISTIC_LEVEL)
             self.logger.warning("intent resolved offline as %s", intent)
 
-        fields_result = self.extract_fields(msg=msg, intent=intent)
+        fields_result = self.extract_fields(sense_msg=UserMessage(content=(sense or msg.content)), intent=intent)
 
         if fields_result.ok:
             field_extraction = fields_result.parsed

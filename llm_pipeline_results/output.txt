@@ -2,15 +2,15 @@
     {
         "question_index": 0,
         "start_question": "The new update is great, but it would be useful to have more customization options.",
-        "summary": "The new update is great, but it would be useful to have more customization options.",
+        "summary": "User wants more customization options in the latest update.",
         "category": "feedback",
-        "sentiment": "positive",
+        "sentiment": "neutral",
         "key_points": [
-            "The user finds the new update great overall.",
-            "The user is requesting more customization options.",
-            "The feedback is mixed, combining praise with a suggestion."
+            "The user likes the new update but wants more customization options.",
+            "The feedback is a suggestion for improvement.",
+            "The user expressed a positive sentiment about the update overall."
         ],
-        "final_answer": "Thank you for your kind words about the update! We're glad you're enjoying it, and we appreciate your suggestion for more customization options. We'll share this with our team for future improvements.",
+        "final_answer": "Thank you for sharing your thoughts about the latest update. We're glad you're enjoying it, and we appreciate your suggestion for more customization options. Your input is valuable and will be considered as we continue to refine the user experience.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -28,15 +28,15 @@
     {
         "question_index": 1,
         "start_question": "I think your service needs better documentation for new users.",
-        "summary": "I think your service needs better documentation for new users.",
+        "summary": "User wants improved documentation for new users.",
         "category": "feedback",
         "sentiment": "neutral",
         "key_points": [
-            "The user suggests improving documentation for new users.",
-            "The feedback is given with a neutral sentiment and medium urgency.",
-            "The feedback type is a suggestion for the service documentation."
+            "The user is suggesting improved documentation for new users.",
+            "The feedback is a suggestion for improvement.",
+            "The feature mentioned is documentation."
         ],
-        "final_answer": "Thank you for your feedback. We appreciate your suggestion to improve the documentation for new users. We will review our current materials and work on making them clearer and more helpful. Your input helps us enhance the user experience.",
+        "final_answer": "Thank you for your suggestion about improving our documentation for new users. We understand that clear and accessible documentation is essential for a smooth onboarding experience. Your feedback helps us identify areas where we can better support our users. We will review your input as we continue to enhance our resources.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -58,11 +58,11 @@
         "category": "support",
         "sentiment": "negative",
         "key_points": [
-            "Application crashes during file upload.",
-            "User is unable to upload files due to this issue.",
-            "The issue is urgent and negatively impacts the user's workflow."
+            "The application crashes during file upload.",
+            "The user is experiencing a negative sentiment and high urgency.",
+            "The problem is application-related with no specific error code provided."
         ],
-        "final_answer": "Thank you for reporting this. Let's get this sorted quickly. First, ensure the file you're uploading is under the size limit (usually 25MB) and in a supported format (like PDF, JPG, PNG). If it is, try clearing your browser cache or using an incognito/private window. If the crash persists, please tell me the exact file type and size, and whether you're using a browser or the mobile app – this will help us pinpoint the issue faster.",
+        "final_answer": "I'm sorry you're experiencing crashes when uploading files. Please try clearing your browser cache and cookies, then restart the application. If the issue persists, try uploading a smaller file (under 10 MB) or a different file format like PDF or JPEG. Also, ensure your browser and app are updated to the latest versions. If none of these steps help, let me know your operating system and browser details so I can investigate further.",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -80,15 +80,15 @@
     {
         "question_index": 3,
         "start_question": "I can't log into my account and need help resetting my password.",
-        "summary": "User cannot log into their account and needs help resetting their password.",
+        "summary": "User cannot log in to their account and requests assistance with resetting the password.",
         "category": "support",
         "sentiment": "negative",
         "key_points": [
-            "User is experiencing login issues.",
-            "User needs help resetting their password.",
-            "The sentiment is negative and urgency is high."
+            "The user reports being unable to log into their account.",
+            "The user needs help resetting their password.",
+            "The request is urgent and has a negative sentiment."
         ],
-        "final_answer": "I understand you're having trouble logging in and need to reset your password. Please go to the login page and click on the 'Forgot Password' link. Enter your registered email address, and we'll send you a password reset link. If you don't receive the email within a few minutes, check your spam folder or contact us for further assistance.",
+        "final_answer": "I'm sorry to hear you're having trouble logging in. To reset your password, please go to the login page and click the 'Forgot Password' link. Enter your email address, and we'll send you instructions to create a new password. If you don't receive the email within a few minutes, check your spam folder. Let me know if you need further assistance!",
         "judge_result": {
             "passed": true,
             "score": 10,
@@ -106,15 +106,145 @@
     {
         "question_index": 4,
         "start_question": "I would like to suggest adding dark mode to the application.",
-        "summary": "User wants to suggest a feature request: adding a dark mode to the app.",
+        "summary": "User wants to propose a new feature: adding dark mode to the application.",
         "category": "feedback",
         "sentiment": "neutral",
         "key_points": [
             "The user suggests adding a dark mode feature to the application.",
-            "This is a feature request submitted as feedback.",
-            "The suggestion aims to improve user experience with a visual preference option."
+            "This is a feature suggestion rather than a complaint or question.",
+            "The feedback is presented without strong positive or negative sentiment."
         ],
-        "final_answer": "Thank you for your suggestion about adding a dark mode to the application. We appreciate your input and have shared it with our product team for consideration. Feature requests like this help us prioritize improvements based on user needs.",
+        "final_answer": "Thank you for your suggestion about adding dark mode to the application. We understand that a dark mode can enhance user comfort, especially in low-light environments, and can also help reduce eye strain for some users. Your input is valuable as we continue to explore ways to improve the experience.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
+    },
+    {
+        "question_index": 5,
+        "start_question": "How much does your premium plan cost?",
+        "summary": "User wants to know the price of the premium plan.",
+        "category": "sales",
+        "sentiment": "neutral",
+        "key_points": [
+            "The user is inquiring about the price of the premium plan.",
+            "The user is evaluating a purchasing decision.",
+            "The user has not provided any budget or additional product preferences."
+        ],
+        "final_answer": "Our premium plan is $49 per month, billed annually at $499 for a 15% savings. It includes unlimited access to all features, priority support, and advanced analytics. Would you like me to help you get started today?",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
+    },
+    {
+        "question_index": 6,
+        "start_question": "My payment was declined and I need assistance resolving the issue.",
+        "summary": "User's payment was declined and they need assistance resolving the issue.",
+        "category": "support",
+        "sentiment": "negative",
+        "key_points": [
+            "The user's payment was declined.",
+            "The user needs assistance resolving the issue.",
+            "The sentiment is negative and urgency is high."
+        ],
+        "final_answer": "I understand your payment was declined, and I know this can be frustrating. Let's figure this out together. Could you please confirm the payment method you used (credit card, debit card, or another option) and whether you've seen any specific error message? That will help me narrow down the issue and get you back on track quickly.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
+    },
+    {
+        "question_index": 7,
+        "start_question": "I want a refund because the product did not meet my expectations.",
+        "summary": "User wants a refund for a product that did not meet expectations.",
+        "category": "complaint",
+        "sentiment": "negative",
+        "key_points": [
+            "User is requesting a refund.",
+            "Reason for refund is that the product did not meet expectations.",
+            "User is dissatisfied and has a negative sentiment."
+        ],
+        "final_answer": "I'm sorry to hear that the product didn't meet your expectations. Your satisfaction is important to us, and I'd like to help get this sorted. Could you please provide your order number so I can process a refund for you?",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
+    },
+    {
+        "question_index": 8,
+        "start_question": "How does machine learning work?",
+        "summary": "User wants an explanation of how machine learning works, specifically its core principles and mechanisms.",
+        "category": "general_question",
+        "sentiment": "neutral",
+        "key_points": [
+            "Machine learning is a subset of artificial intelligence where systems learn from data to improve performance.",
+            "It relies on algorithms that identify patterns in training data and make predictions or decisions without explicit programming.",
+            "Core mechanisms include supervised learning (labeled data), unsupervised learning (unlabeled data), and reinforcement learning (reward-based)."
+        ],
+        "final_answer": "Machine learning works by using algorithms to analyze data, identify patterns, and make decisions with minimal human intervention. In supervised learning, the model is trained on labeled examples to predict outcomes, while unsupervised learning finds hidden structures in unlabeled data. Reinforcement learning involves an agent learning through trial and error to maximize rewards. The key is that the system improves over time as it processes more data, without being explicitly programmed for each task.",
+        "judge_result": {
+            "passed": true,
+            "score": 10,
+            "issues": []
+        },
+        "degraded_steps": [],
+        "fallback_levels": {
+            "extract_sense": 0,
+            "intent": 0,
+            "extract_fields": 0,
+            "final_answer": 0,
+            "judge": 0
+        }
+    },
+    {
+        "question_index": 9,
+        "start_question": "What is the capital of France?",
+        "summary": "User asks for the capital of France.",
+        "category": "general_question",
+        "sentiment": "neutral",
+        "key_points": [
+            "The capital of France is Paris.",
+            "Paris is one of the most famous cities in the world.",
+            "France is a country in Western Europe."
+        ],
+        "final_answer": "The capital of France is Paris. It is a globally renowned city known for its art, culture, and landmarks such as the Eiffel Tower.",
         "judge_result": {
             "passed": true,
             "score": 10,
